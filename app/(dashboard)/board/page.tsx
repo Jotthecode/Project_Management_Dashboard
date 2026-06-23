@@ -14,7 +14,7 @@ export default async function BoardPage() {
         <CreateTaskSheet profiles={profiles} />
       </header>
       <div className="flex-1 min-h-0">
-        <KanbanBoard initialTasks={tasks} />
+        <KanbanBoard initialTasks={tasks} profiles={profiles} />
       </div>
     </main>
   );

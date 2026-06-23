@@ -38,9 +38,11 @@ import {
   type PriorityLevel,
   type DecoLevel,
   type LabelCategory,
+  type TaskStatus,
   PRIORITY_CONFIG,
   DECO_CONFIG,
   LABEL_CONFIG,
+  STATUS_CONFIG,
 } from "@/lib/types";
 
 const ALL_LABELS = Object.keys(LABEL_CONFIG) as LabelCategory[];
@@ -51,9 +53,10 @@ interface CreateTaskSheetProps {
   profiles: Profile[];
   /** Optional: render a custom trigger. Defaults to a "New Task" button. */
   trigger?: React.ReactNode;
+  defaultStatus?: TaskStatus;
 }
 
-export function CreateTaskSheet({ profiles, trigger }: CreateTaskSheetProps) {
+export function CreateTaskSheet({ profiles, trigger, defaultStatus }: CreateTaskSheetProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -125,6 +128,7 @@ export function CreateTaskSheet({ profiles, trigger }: CreateTaskSheetProps) {
 
     startTransition(async () => {
       try {
+        const targetStatus = defaultStatus ?? "sierra_bravo";
         await createTask({
           name: name.trim(),
           description: description.trim(),
@@ -133,12 +137,12 @@ export function CreateTaskSheet({ profiles, trigger }: CreateTaskSheetProps) {
           priority,
           deco,
           labels,
-          status: "sierra_bravo",
+          status: targetStatus,
           dependencies,
         });
 
         toast.success("Task created", {
-          description: `"${name}" was added to Sierra Bravo.`,
+          description: `"${name}" was added to ${STATUS_CONFIG[targetStatus].label}.`,
         });
 
         resetForm();
@@ -171,7 +175,7 @@ export function CreateTaskSheet({ profiles, trigger }: CreateTaskSheetProps) {
         <SheetHeader>
           <SheetTitle className="text-white">New Task</SheetTitle>
           <SheetDescription className="text-zinc-400">
-            Create a task on the SmartScore board. New tasks start in Sierra Bravo.
+            Create a task on the SmartScore board. New tasks start in {STATUS_CONFIG[defaultStatus ?? "sierra_bravo"].label}.
           </SheetDescription>
         </SheetHeader>
 

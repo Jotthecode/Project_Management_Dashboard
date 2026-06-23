@@ -2,7 +2,7 @@
 "use client";
  
 import { useState, useTransition } from "react";
-import { Task, TaskStatus, COLUMN_ORDER } from "@/lib/types";
+import { Task, TaskStatus, COLUMN_ORDER, type Profile } from "@/lib/types";
 import { KanbanColumn } from "@/components/kanban-column";
 import { TaskDetailSheet } from "@/components/task-detail-sheet";
 import { moveTask } from "@/actions/tasks";
@@ -10,9 +10,10 @@ import { toast } from "sonner";
  
 interface KanbanBoardProps {
   initialTasks: Task[];
+  profiles: Profile[];
 }
  
-export function KanbanBoard({ initialTasks }: KanbanBoardProps) {
+export function KanbanBoard({ initialTasks, profiles }: KanbanBoardProps) {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -58,6 +59,7 @@ export function KanbanBoard({ initialTasks }: KanbanBoardProps) {
             key={status}
             status={status}
             tasks={tasksByStatus(status)}
+            profiles={profiles}
             onTaskClick={setSelectedTask}
             onDrop={handleDrop}
           />

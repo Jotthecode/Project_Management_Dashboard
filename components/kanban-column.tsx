@@ -1,17 +1,20 @@
 // components/kanban-column.tsx
 "use client";
 
-import { Task, TaskStatus, STATUS_CONFIG } from "@/lib/types";
+import { Task, TaskStatus, STATUS_CONFIG, type Profile } from "@/lib/types";
 import { TaskCard } from "@/components/task-card";
+import { CreateTaskSheet } from "@/components/create-task-sheet";
+import { Plus } from "lucide-react";
 
 interface KanbanColumnProps {
   status: TaskStatus;
   tasks: Task[];
+  profiles: Profile[];
   onTaskClick?: (task: Task) => void;
   onDrop?: (taskId: string, newStatus: TaskStatus) => void;
 }
 
-export function KanbanColumn({ status, tasks, onTaskClick, onDrop }: KanbanColumnProps) {
+export function KanbanColumn({ status, tasks, profiles, onTaskClick, onDrop }: KanbanColumnProps) {
   const config = STATUS_CONFIG[status];
   const isRecurring = status === "oscar_delta";
 
@@ -68,6 +71,20 @@ export function KanbanColumn({ status, tasks, onTaskClick, onDrop }: KanbanColum
           </div>
         )}
       </div>
+
+      <div className="px-2 pb-3 pt-1 border-t border-zinc-800/40">
+        <CreateTaskSheet
+          profiles={profiles}
+          defaultStatus={status}
+          trigger={
+            <button className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-medium text-zinc-400 hover:text-white hover:bg-zinc-800/60 border border-dashed border-zinc-850 hover:border-zinc-700 rounded-lg transition-all">
+              <Plus className="h-3.5 w-3.5" />
+              Add task to {config.code}
+            </button>
+          }
+        />
+      </div>
     </div>
   );
 }
+

@@ -32,20 +32,32 @@ export function TaskCard({ task, onClick, draggable = true, onDragStart }: TaskC
       )}
       style={{ backgroundColor: "#2D2D2D", color: "#FFFFFF" }}
     >
-      {/* Priority + DECO strip */}
-      <div className="flex items-center gap-1.5 mb-2">
+      {/* Priority + Complexity oval badges */}
+      <div className="flex flex-wrap items-center gap-1.5 mb-2.5">
         <span
-          className="h-2 w-2 rounded-full"
-          style={{ backgroundColor: priority.color }}
+          className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold border transition-all"
+          style={{
+            borderColor: `${priority.color}40`,
+            backgroundColor: `${priority.color}15`,
+            color: priority.color,
+          }}
           title={`Priority: ${priority.label}`}
-        />
+        >
+          {task.priority}
+        </span>
         <span
-          className="h-2 w-2 rounded-full"
-          style={{ backgroundColor: deco.color }}
-          title={`DECO: ${deco.label} (${deco.duration})`}
-        />
+          className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold border transition-all"
+          style={{
+            borderColor: `${deco.color}40`,
+            backgroundColor: `${deco.color}15`,
+            color: deco.color,
+          }}
+          title={`Complexity: ${deco.label} (${deco.duration})`}
+        >
+          {deco.label}
+        </span>
         {task.is_blocked && (
-          <span className="ml-auto flex items-center gap-1 text-xs text-red-400">
+          <span className="ml-auto flex items-center gap-1 text-[11px] font-medium text-red-400">
             <AlertTriangle className="h-3 w-3" />
             Dependency
           </span>

@@ -114,6 +114,17 @@ export function TaskDetailSheet({
       ? calculateScore(task.priority, task.deco, task.due_date, new Date().toISOString().split("T")[0])
       : task.score;
 
+  const due = new Date(task.due_date);
+  const completed = task.completed_at ? new Date(task.completed_at.split('T')[0]) : new Date(new Date().toISOString().split("T")[0]);
+  const msPerDay = 1000 * 60 * 60 * 24;
+  const daysEarly = Math.round((due.getTime() - completed.getTime()) / msPerDay);
+
+  let bonus = 0;
+  if (daysEarly > 10) bonus = 10;
+  else if (daysEarly > 0) bonus = daysEarly;
+  else if (daysEarly === 0) bonus = 1;
+  else bonus = 0;
+
   // Find the parent task (if this task was auto-created via dependency automation)
   const parentTask = task.parent_task_id
     ? allTasks.find((t) => t.id === task.parent_task_id)
@@ -272,15 +283,47 @@ export function TaskDetailSheet({
             )}
           </div>
 
-          {/* Score */}
-          <div className="rounded-lg p-3 flex items-center justify-between" style={{ backgroundColor: "#2D2D2D" }}>
-            <p className="text-xs text-zinc-400 flex items-center gap-1">
-              <Trophy className="h-3 w-3 text-yellow-400" />
-              {task.status === "tango_charlie" ? "Final Score" : "Projected Score (if completed today)"}
-            </p>
-            <span className="text-lg font-semibold text-yellow-400">
-              {projectedScore != null ? `${projectedScore} pts` : "—"}
-            </span>
+          {/* Score breakdown card */}
+          <div className="rounded-lg p-4 border border-yellow-500/20 bg-yellow-500/5 space-y-3">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-semibold text-yellow-400 flex items-center gap-1.5">
+                <Trophy className="h-4 w-4" />
+                {task.status === "tango_charlie" ? "Final Score" : "Projected Score (If Completed Today)"}
+              </p>
+              <span className="text-xl font-bold text-yellow-400">
+                {projectedScore != null ? `${projectedScore} pts` : "0 pts"}
+              </span>
+            </div>
+
+            <div className="text-xs text-zinc-400 border-t border-zinc-800 pt-2 space-y-2">
+              <div>
+                <p className="text-[10px] uppercase font-bold text-zinc-500 tracking-wide mb-1">Scoring Formula</p>
+                <code className="block bg-zinc-950 p-2 rounded text-zinc-300 font-mono text-[11px] overflow-x-auto whitespace-pre">
+                  Priority Weight ({priority.weight}) × DECO Weight ({deco.weight}) × 100 × Bonus ({bonus})
+                </code>
+              </div>
+
+              <div className="flex flex-col gap-1 text-[11px] bg-zinc-950/40 p-2 rounded border border-zinc-850">
+                <div className="flex justify-between">
+                  <span className="text-zinc-500">Priority Weight ({task.priority}):</span>
+                  <span className="font-semibold text-zinc-300">{priority.weight}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-zinc-500">DECO Weight ({deco.label}):</span>
+                  <span className="font-semibold text-zinc-300">{deco.weight}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-zinc-500">Days Early:</span>
+                  <span className="font-semibold text-zinc-300">
+                    {daysEarly > 0 ? `${daysEarly} days early` : daysEarly === 0 ? "On due date" : `${Math.abs(daysEarly)} days late`}
+                  </span>
+                </div>
+                <div className="flex justify-between border-t border-zinc-800 pt-1 mt-1">
+                  <span className="text-zinc-400 font-medium">Completion Bonus:</span>
+                  <span className="font-bold text-zinc-200">{bonus}</span>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Delete Option */}

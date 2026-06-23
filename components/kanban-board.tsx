@@ -2,7 +2,7 @@
 "use client";
  
 import { useState, useTransition } from "react";
-import { Task, TaskStatus, COLUMN_ORDER, type Profile } from "@/lib/types";
+import { Task, TaskStatus, COLUMN_ORDER, type Profile, calculateScore } from "@/lib/types";
 import { KanbanColumn } from "@/components/kanban-column";
 import { TaskDetailSheet } from "@/components/task-detail-sheet";
 import { moveTask } from "@/actions/tasks";
@@ -29,16 +29,18 @@ export function KanbanBoard({ initialTasks, profiles }: KanbanBoardProps) {
       prev.map((t) => (t.id === taskId ? { ...t, status: newStatus } : t))
     );
  
+    if (newStatus === "tango_charlie" && task.status !== "tango_charlie") {
+      const today = new Date().toISOString().split("T")[0];
+      const score = calculateScore(task.priority, task.deco, task.due_date, today);
+      toast.success("Task completed! 🎉", {
+        description: `You earned ${score} points for "${task.name}"`,
+      });
+    }
+
     startTransition(async () => {
       try {
         const updated = await moveTask(taskId, newStatus);
         setTasks((prev) => prev.map((t) => (t.id === taskId ? updated : t)));
- 
-        if (newStatus === "tango_charlie" && updated.score != null) {
-          toast.success("Task completed 🎉", {
-            description: `${updated.name} scored ${updated.score} points.`,
-          });
-        }
       } catch (err: any) {
         // Revert on failure
         setTasks((prev) =>

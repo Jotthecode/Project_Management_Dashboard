@@ -351,30 +351,110 @@ export async function getLeaderboard(range: "weekly" | "monthly" | "all_time") {
     query = query.gte("completed_at", monthAgo.toISOString());
   }
 
-  const { data, error } = await query;
-  if (error) throw error;
+  let { data, error } = await query;
+  if (error) {
+    // Fallback: Query the tasks table directly if the view doesn't have the new columns yet
+    const { data: fallbackTasks, error: fallbackErr } = await supabase
+      .from("tasks")
+      .select(`
+        id,
+        name,
+        score,
+        priority,
+        deco,
+        completed_at,
+        due_date,
+        owner_id,
+        owner:profiles!tasks_owner_id_fkey(id, full_name)
+      `)
+      .eq("status", "tango_charlie")
+      .not("score", "is", null)
+      .order("completed_at", { ascending: false });
+
+    if (fallbackErr) throw fallbackErr;
+
+    data = (fallbackTasks ?? []).map((t: any) => ({
+      user_id: t.owner_id,
+      full_name: t.owner?.full_name ?? "Unknown",
+      task_id: t.id,
+      task_name: t.name,
+      score: t.score,
+      priority: t.priority,
+      deco: t.deco,
+      completed_at: t.completed_at,
+      due_date: t.due_date,
+    }));
+
+    // Re-apply range filter locally for the fallback query
+    if (range === "weekly") {
+      const weekAgo = new Date();
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      data = data.filter((row: any) => row.completed_at && new Date(row.completed_at) >= weekAgo);
+    } else if (range === "monthly") {
+      const monthAgo = new Date();
+      monthAgo.setMonth(monthAgo.getMonth() - 1);
+      data = data.filter((row: any) => row.completed_at && new Date(row.completed_at) >= monthAgo);
+    }
+  }
 
   // Initialize map with all profiles
-  const byUser = new Map<string, { full_name: string; totalPoints: number; tasksCompleted: number }>();
+  const byUser = new Map<string, {
+    full_name: string;
+    totalPoints: number;
+    tasksCompleted: number;
+    bestScore: number;
+    tasks: any[];
+  }>();
+
   for (const profile of profiles ?? []) {
     byUser.set(profile.id, {
       full_name: profile.full_name,
       totalPoints: 0,
       tasksCompleted: 0,
+      bestScore: 0,
+      tasks: [],
     });
   }
+
+  // Helper function to parse/calculate days early
+  const getDaysEarly = (dueDateStr: string, completedDateStr: string): number => {
+    if (!dueDateStr || !completedDateStr) return 0;
+    const due = new Date(dueDateStr);
+    const completed = new Date(completedDateStr.split("T")[0]);
+    const diffTime = due.getTime() - completed.getTime();
+    return Math.round(diffTime / (1000 * 60 * 60 * 24));
+  };
 
   // Aggregate by user
   for (const row of data ?? []) {
     const existing = byUser.get(row.user_id);
+    const scoreVal = Number(row.score) || 0;
+
+    const taskObj = {
+      task_id: row.task_id,
+      task_name: row.task_name,
+      priority: row.priority || "P3",
+      deco: row.deco || "medium",
+      score: scoreVal,
+      completed_at: row.completed_at,
+      due_date: row.due_date,
+      days_early: getDaysEarly(row.due_date, row.completed_at),
+    };
+
     if (existing) {
-      existing.totalPoints += row.score ?? 0;
+      existing.totalPoints += scoreVal;
       existing.tasksCompleted += 1;
+      if (scoreVal > existing.bestScore) {
+        existing.bestScore = scoreVal;
+      }
+      existing.tasks.push(taskObj);
     } else {
       byUser.set(row.user_id, {
         full_name: row.full_name,
-        totalPoints: row.score ?? 0,
+        totalPoints: scoreVal,
         tasksCompleted: 1,
+        bestScore: scoreVal,
+        tasks: [taskObj],
       });
     }
   }
@@ -385,6 +465,9 @@ export async function getLeaderboard(range: "weekly" | "monthly" | "all_time") {
       full_name: v.full_name,
       totalPoints: Math.round(v.totalPoints * 100) / 100,
       tasksCompleted: v.tasksCompleted,
+      bestScore: Math.round(v.bestScore * 100) / 100,
+      avgScore: v.tasksCompleted > 0 ? Math.round((v.totalPoints / v.tasksCompleted) * 100) / 100 : 0,
+      tasks: v.tasks,
     }))
     .sort((a, b) => b.totalPoints - a.totalPoints);
 }

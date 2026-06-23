@@ -68,7 +68,7 @@ export async function createTask(input: CreateTaskInput) {
     }
   }
 
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   return task as Task;
 }
 
@@ -175,7 +175,7 @@ export async function createDependency(
     console.error("Failed to send immediate dependency email:", emailErr);
   }
 
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   return linkedTask as Task;
 }
 
@@ -216,7 +216,7 @@ export async function resolveDependency(dependencyId: string) {
       .eq("id", dep.task_id);
   }
 
-  revalidatePath("/");
+  revalidatePath("/", "layout");
 }
 
 // =====================================================================
@@ -264,7 +264,7 @@ export async function moveTask(taskId: string, newStatus: TaskStatus) {
     .single();
   if (error) throw error;
 
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   return updated as Task;
 }
 
@@ -286,7 +286,7 @@ export async function setBlocked(taskId: string, isBlocked: boolean, reason?: st
     .single();
 
   if (error) throw error;
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   return data as Task;
 }
 
@@ -330,6 +330,12 @@ export async function getBoardTasks() {
 export async function getLeaderboard(range: "weekly" | "monthly" | "all_time") {
   const supabase = await createClient();
 
+  // Fetch all profiles so that everyone shows up in the leaderboard
+  const { data: profiles, error: profilesErr } = await supabase
+    .from("profiles")
+    .select("id, full_name");
+  if (profilesErr) throw profilesErr;
+
   let query = supabase
     .from("leaderboard")
     .select("*")
@@ -348,21 +354,38 @@ export async function getLeaderboard(range: "weekly" | "monthly" | "all_time") {
   const { data, error } = await query;
   if (error) throw error;
 
-  // Aggregate by user
+  // Initialize map with all profiles
   const byUser = new Map<string, { full_name: string; totalPoints: number; tasksCompleted: number }>();
-  for (const row of data ?? []) {
-    const existing = byUser.get(row.user_id) ?? {
-      full_name: row.full_name,
+  for (const profile of profiles ?? []) {
+    byUser.set(profile.id, {
+      full_name: profile.full_name,
       totalPoints: 0,
       tasksCompleted: 0,
-    };
-    existing.totalPoints += row.score ?? 0;
-    existing.tasksCompleted += 1;
-    byUser.set(row.user_id, existing);
+    });
+  }
+
+  // Aggregate by user
+  for (const row of data ?? []) {
+    const existing = byUser.get(row.user_id);
+    if (existing) {
+      existing.totalPoints += row.score ?? 0;
+      existing.tasksCompleted += 1;
+    } else {
+      byUser.set(row.user_id, {
+        full_name: row.full_name,
+        totalPoints: row.score ?? 0,
+        tasksCompleted: 1,
+      });
+    }
   }
 
   return Array.from(byUser.entries())
-    .map(([userId, v]) => ({ userId, ...v }))
+    .map(([userId, v]) => ({
+      userId,
+      full_name: v.full_name,
+      totalPoints: Math.round(v.totalPoints * 100) / 100,
+      tasksCompleted: v.tasksCompleted,
+    }))
     .sort((a, b) => b.totalPoints - a.totalPoints);
 }
 
@@ -417,7 +440,7 @@ export async function markDailyDone(taskId: string) {
   });
 
   if (error) throw error;
-  revalidatePath("/");
+  revalidatePath("/", "layout");
 }
 
 // =====================================================================
@@ -432,5 +455,5 @@ export async function deleteTask(taskId: string) {
     .eq("id", taskId);
 
   if (error) throw error;
-  revalidatePath("/");
+  revalidatePath("/", "layout");
 }

@@ -1,8 +1,9 @@
-// app/(dashboard)/leaderboard/page.tsx
 import { createClient } from "@/lib/supabase-server";
 import { getLeaderboard } from "@/actions/tasks";
 import { redirect } from "next/navigation";
 import { LeaderboardTabs } from "./leaderboard-tabs";
+
+export const dynamic = "force-dynamic";
 
 export default async function LeaderboardPage() {
   const supabase = await createClient();

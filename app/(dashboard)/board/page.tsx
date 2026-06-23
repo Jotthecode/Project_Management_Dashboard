@@ -1,8 +1,9 @@
-// app/(dashboard)/board/page.tsx
 import { getBoardTasks } from "@/actions/tasks";
 import { getProfiles } from "@/actions/profiles";
 import { KanbanBoard } from "@/components/kanban-board";
 import { CreateTaskSheet } from "@/components/create-task-sheet";
+
+export const dynamic = "force-dynamic";
 
 export default async function BoardPage() {
   const [tasks, profiles] = await Promise.all([getBoardTasks(), getProfiles()]);

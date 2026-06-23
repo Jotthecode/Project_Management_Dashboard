@@ -74,6 +74,9 @@ export function KanbanBoard({ initialTasks, profiles }: KanbanBoardProps) {
         onUpdated={(updated) =>
           setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)))
         }
+        onDeleted={(deletedId) =>
+          setTasks((prev) => prev.filter((t) => t.id !== deletedId))
+        }
       />
     </div>
   );

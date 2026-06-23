@@ -19,8 +19,8 @@ import {
   STATUS_CONFIG,
   calculateScore,
 } from "@/lib/types";
-import { setBlocked, resolveDependency } from "@/actions/tasks";
-import { Link2, Trophy, AlertTriangle, Users } from "lucide-react";
+import { setBlocked, resolveDependency, deleteTask } from "@/actions/tasks";
+import { Link2, Trophy, AlertTriangle, Users, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -30,9 +30,17 @@ interface TaskDetailSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onUpdated: (task: Task) => void;
+  onDeleted?: (taskId: string) => void;
 }
 
-export function TaskDetailSheet({ task, allTasks, open, onOpenChange, onUpdated }: TaskDetailSheetProps) {
+export function TaskDetailSheet({
+  task,
+  allTasks,
+  open,
+  onOpenChange,
+  onUpdated,
+  onDeleted,
+}: TaskDetailSheetProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [reasonDraft, setReasonDraft] = useState(task?.blocked_reason ?? "");
@@ -115,6 +123,25 @@ export function TaskDetailSheet({ task, allTasks, open, onOpenChange, onUpdated 
     startTransition(async () => {
       const updated = await setBlocked(taskId, nextBlocked, nextBlocked ? reasonDraft : undefined);
       onUpdated(updated);
+    });
+  }
+
+  function handleDelete() {
+    if (!window.confirm("Are you sure you want to delete this task? This action cannot be undone.")) {
+      return;
+    }
+
+    startTransition(async () => {
+      try {
+        await deleteTask(taskId);
+        toast.success("Task deleted successfully");
+        onDeleted?.(taskId);
+        onOpenChange(false);
+      } catch (err: any) {
+        toast.error("Failed to delete task", {
+          description: err.message || "Something went wrong.",
+        });
+      }
     });
   }
 
@@ -254,6 +281,19 @@ export function TaskDetailSheet({ task, allTasks, open, onOpenChange, onUpdated 
             <span className="text-lg font-semibold text-yellow-400">
               {projectedScore != null ? `${projectedScore} pts` : "—"}
             </span>
+          </div>
+
+          {/* Delete Option */}
+          <div className="pt-4 border-t border-zinc-800 flex justify-end">
+            <Button
+              variant="destructive"
+              disabled={isPending}
+              onClick={handleDelete}
+              className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-semibold bg-red-650 hover:bg-red-700 text-white rounded-lg transition-colors"
+            >
+              <Trash2 className="h-4 w-4" />
+              Delete Task
+            </Button>
           </div>
         </div>
       </SheetContent>

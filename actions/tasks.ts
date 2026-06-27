@@ -106,12 +106,20 @@ export async function createDependency(
     .single();
   if (parentErr) throw parentErr;
 
+  // Retrieve requestor full name
+  const { data: requestorProfile } = await supabase
+    .from("profiles")
+    .select("full_name")
+    .eq("id", parentTask.owner_id)
+    .single();
+  const requestorName = requestorProfile?.full_name || "Unknown Requestor";
+
   // Create B's linked task — same Due Date, Priority, DECO/Complexity as parent.
   const { data: linkedTask, error: linkedErr } = await supabase
     .from("tasks")
     .insert({
       name: `[DEPENDENCY] ${reason}`,
-      description: `Requested by ${parentTask.owner_id}: ${reason}`,
+      description: `Requested by ${requestorName}: ${reason}`,
       owner_id: dependsOnUserId,
       due_date: parentTask.due_date,
       priority: parentTask.priority,

@@ -334,25 +334,25 @@ export function TaskDetailSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="w-full sm:max-w-lg border-zinc-200 dark:border-zinc-800 p-8 overflow-y-auto bg-white dark:bg-[#1E1E1E] text-zinc-900 dark:text-white"
+        className="w-full sm:max-w-lg border-l border-zinc-200 dark:border-zinc-800 p-6 sm:p-10 overflow-y-auto bg-white dark:bg-[#1E1E1E] text-zinc-900 dark:text-white"
       >
         <SheetHeader className="pb-4 border-b border-zinc-200 dark:border-zinc-800/85">
           <SheetTitle className="text-zinc-900 dark:text-zinc-50 text-xl font-bold">{task.name}</SheetTitle>
           <SheetDescription className="text-zinc-500 dark:text-zinc-400 text-xs mt-1.5 leading-relaxed">{task.description}</SheetDescription>
         </SheetHeader>
 
-        <div className="mt-6 space-y-6 text-sm">
+        <div className="mt-6 space-y-6 text-sm px-1">
           {isEditing ? (
             <div className="space-y-4">
               {/* Owners (Primary & Secondary) */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label className="text-zinc-300 text-xs">Primary Owner</Label>
+                  <Label className="text-zinc-650 dark:text-zinc-300 text-xs">Primary Owner</Label>
                   <Select value={editOwnerId} onValueChange={setEditOwnerId}>
-                    <SelectTrigger className="bg-[#2D2D2D] border-zinc-700 text-white text-xs mt-1">
+                    <SelectTrigger className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs mt-1">
                       <SelectValue placeholder="Primary Owner" />
                     </SelectTrigger>
-                    <SelectContent className="bg-[#2D2D2D] border-zinc-700 text-white">
+                    <SelectContent className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100">
                       {profiles.map((p) => (
                         <SelectItem key={p.id} value={p.id}>
                           {p.full_name}
@@ -362,12 +362,12 @@ export function TaskDetailSheet({
                   </Select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-zinc-300 text-xs">Secondary Owner</Label>
+                  <Label className="text-zinc-650 dark:text-zinc-300 text-xs">Secondary Owner</Label>
                   <Select value={editOwner2Id || "unassigned"} onValueChange={setEditOwner2Id}>
-                    <SelectTrigger className="bg-[#2D2D2D] border-zinc-700 text-white text-xs mt-1">
+                    <SelectTrigger className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs mt-1">
                       <SelectValue placeholder="None" />
                     </SelectTrigger>
-                    <SelectContent className="bg-[#2D2D2D] border-zinc-700 text-white">
+                    <SelectContent className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100">
                       <SelectItem value="unassigned">None</SelectItem>
                       {profiles.map((p) => (
                         <SelectItem key={p.id} value={p.id} disabled={p.id === editOwnerId}>
@@ -381,16 +381,16 @@ export function TaskDetailSheet({
 
               {/* Wingmen Selection */}
               <div className="space-y-2">
-                <Label className="text-zinc-300 text-xs">Wingmen (Additional Owners)</Label>
+                <Label className="text-zinc-650 dark:text-zinc-300 text-xs">Wingmen (Additional Owners)</Label>
                 <div className="flex gap-2">
                   <Select
-                    value={selectedWingmanToAdd}
-                    onValueChange={setSelectedWingmanToAdd}
+                     value={selectedWingmanToAdd}
+                     onValueChange={setSelectedWingmanToAdd}
                   >
-                    <SelectTrigger className="bg-[#2D2D2D] border-zinc-700 text-white text-xs flex-1">
+                    <SelectTrigger className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs flex-1">
                       <SelectValue placeholder="Add wingman..." />
                     </SelectTrigger>
-                    <SelectContent className="bg-[#2D2D2D] border-zinc-700 text-white">
+                    <SelectContent className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100">
                       {profiles
                         .filter(
                           (p) =>
@@ -408,7 +408,7 @@ export function TaskDetailSheet({
                   <Button
                     type="button"
                     onClick={handleAddWingman}
-                    className="bg-zinc-800 hover:bg-zinc-750 text-white text-xs border border-zinc-700 px-3 shrink-0 h-9"
+                    className="bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-750 text-zinc-900 dark:text-white text-xs border border-zinc-200 dark:border-zinc-700 px-3 shrink-0 h-9"
                   >
                     Add
                   </Button>
@@ -440,12 +440,12 @@ export function TaskDetailSheet({
 
               {/* Due Date Edit */}
               <div className="space-y-1.5">
-                <Label className="text-zinc-400 text-xs font-semibold">Due Date</Label>
+                <Label className="text-zinc-650 dark:text-zinc-300 text-xs font-semibold">Due Date</Label>
                 <input
                   type="date"
                   value={editDueDate}
                   onChange={(e) => setEditDueDate(e.target.value)}
-                  className="w-full bg-[#2D2D2D] border border-zinc-700 text-white rounded px-2.5 py-1.5 text-xs focus:outline-none"
+                  className="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-850 text-zinc-900 dark:text-zinc-100 rounded px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
               </div>
 
@@ -454,12 +454,12 @@ export function TaskDetailSheet({
               {/* Priority & Deco (Duration) & Complexity Dropdowns */}
               <div className="grid grid-cols-3 gap-2">
                 <div className="space-y-1.5">
-                  <Label className="text-zinc-300 text-xs">Priority</Label>
+                  <Label className="text-zinc-650 dark:text-zinc-300 text-xs">Priority</Label>
                   <Select value={editPriority} onValueChange={(v) => setEditPriority(v as PriorityLevel)}>
-                    <SelectTrigger className="bg-[#2D2D2D] border-zinc-700 text-white text-xs mt-1">
+                    <SelectTrigger className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs mt-1">
                       <SelectValue placeholder="Priority" />
                     </SelectTrigger>
-                    <SelectContent className="bg-[#2D2D2D] border-zinc-700 text-white">
+                    <SelectContent className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100">
                       {Object.keys(PRIORITY_CONFIG).map((pKey) => (
                         <SelectItem key={pKey} value={pKey}>
                           {pKey}
@@ -469,12 +469,12 @@ export function TaskDetailSheet({
                   </Select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-zinc-300 text-xs">Duration</Label>
+                  <Label className="text-zinc-650 dark:text-zinc-300 text-xs">Duration</Label>
                   <Select value={editDeco} onValueChange={(v) => setEditDeco(v as DecoLevel)}>
-                    <SelectTrigger className="bg-[#2D2D2D] border-zinc-700 text-white text-xs mt-1">
+                    <SelectTrigger className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs mt-1">
                       <SelectValue placeholder="Duration" />
                     </SelectTrigger>
-                    <SelectContent className="bg-[#2D2D2D] border-zinc-700 text-white">
+                    <SelectContent className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100">
                       {Object.keys(DECO_CONFIG).map((dKey) => (
                         <SelectItem key={dKey} value={dKey}>
                           {DECO_CONFIG[dKey as DecoLevel].label}
@@ -484,12 +484,12 @@ export function TaskDetailSheet({
                   </Select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-zinc-300 text-xs">Complexity</Label>
+                  <Label className="text-zinc-650 dark:text-zinc-300 text-xs">Complexity</Label>
                   <Select value={editComplexity} onValueChange={(v) => setEditComplexity(v as ComplexityLevel)}>
-                    <SelectTrigger className="bg-[#2D2D2D] border-zinc-700 text-white text-xs mt-1">
+                    <SelectTrigger className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs mt-1">
                       <SelectValue placeholder="Complexity" />
                     </SelectTrigger>
-                    <SelectContent className="bg-[#2D2D2D] border-zinc-700 text-white">
+                    <SelectContent className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100">
                       {Object.keys(DECO_CONFIG).map((dKey) => (
                         <SelectItem key={dKey} value={dKey}>
                           {DECO_CONFIG[dKey as DecoLevel].label}
@@ -554,21 +554,21 @@ export function TaskDetailSheet({
           {/* Priority & Duration & Complexity read-only */}
           {!isEditing && (
             <div className="grid grid-cols-3 gap-2">
-              <div className="rounded-lg p-3" style={{ backgroundColor: "#2D2D2D" }}>
+              <div className="rounded-lg p-3 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-sm">
                 <p className="text-xs text-zinc-400 mb-1">Priority</p>
                 <div className="flex items-center gap-1.5">
                   <span className="h-2 w-2 rounded-full" style={{ backgroundColor: priority.color }} />
                   <span className="text-xs">{task.priority}</span>
                 </div>
               </div>
-              <div className="rounded-lg p-3" style={{ backgroundColor: "#2D2D2D" }}>
+              <div className="rounded-lg p-3 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-sm">
                 <p className="text-xs text-zinc-400 mb-1">Duration</p>
                 <div className="flex items-center gap-1.5">
                   <span className="h-2 w-2 rounded-full" style={{ backgroundColor: deco.color }} />
                   <span className="text-xs">{deco.label}</span>
                 </div>
               </div>
-              <div className="rounded-lg p-3" style={{ backgroundColor: "#2D2D2D" }}>
+              <div className="rounded-lg p-3 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-sm">
                 <p className="text-xs text-zinc-400 mb-1">Complexity</p>
                 <div className="flex items-center gap-1.5">
                   <span className="h-2 w-2 rounded-full" style={{ backgroundColor: complexity.color }} />
@@ -633,7 +633,7 @@ export function TaskDetailSheet({
           )}
 
           {/* Blocked badge */}
-          <div className="rounded-lg p-3" style={{ backgroundColor: "#2D2D2D" }}>
+          <div className="rounded-lg p-3 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-sm">
             <div className="flex items-center justify-between">
               <p className="text-xs text-zinc-400 flex items-center gap-1">
                 <AlertTriangle className="h-3 w-3" /> Blocked Badge
@@ -811,7 +811,7 @@ export function TaskDetailSheet({
                   placeholder="Add a new note (min 11 chars)..."
                   value={newNote}
                   onChange={(e) => setNewNote(e.target.value)}
-                  className="bg-[#2D2D2D] border-zinc-700 text-white text-xs h-9"
+                  className="bg-zinc-55 dark:bg-[#2D2D2D] border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-white text-xs h-9"
                 />
                 <Button
                   onClick={handleAddNote}
@@ -854,7 +854,7 @@ export function TaskDetailSheet({
 
 function Field({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg p-3" style={{ backgroundColor: "#2D2D2D" }}>
+    <div className="rounded-lg p-3 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-sm">
       <p className="text-xs text-zinc-400 mb-1">{label}</p>
       <p className="text-sm">{value}</p>
     </div>

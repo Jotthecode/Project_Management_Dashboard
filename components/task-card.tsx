@@ -140,7 +140,7 @@ export function TaskCard({ task, onClick, draggable = true, onDragStart }: TaskC
                 To Whom: <strong className="text-zinc-300">{dep.depends_on_user?.full_name || "Unknown"}</strong>
               </div>
               <div className="text-zinc-400 mt-0.5">
-                What: <span className="text-blue-300 italic">"{dep.reason}"</span>
+                For: <span className="text-blue-300 italic">"{dep.reason}"</span>
               </div>
             </div>
           ))}

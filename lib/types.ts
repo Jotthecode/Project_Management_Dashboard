@@ -133,9 +133,9 @@ export function calculateScore(
   dueDate: string,
   completedDate: string
 ): number {
-  const priorityWeight = PRIORITY_CONFIG[priority].weight;
-  const durationWeight = DECO_CONFIG[deco].weight;
-  const complexityWeight = DECO_CONFIG[complexity].weight;
+  const priorityWeight = (PRIORITY_CONFIG[priority] || PRIORITY_CONFIG["P3"]).weight;
+  const durationWeight = (DECO_CONFIG[deco] || DECO_CONFIG["medium"]).weight;
+  const complexityWeight = (DECO_CONFIG[complexity] || DECO_CONFIG["medium"]).weight;
 
   const due = new Date(dueDate);
   const completed = new Date(completedDate);

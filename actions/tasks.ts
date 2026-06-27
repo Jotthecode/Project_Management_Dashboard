@@ -335,6 +335,7 @@ export async function getBoardTasks() {
       )
     `
     )
+    .eq("is_archived", false)
     .order("created_at", { ascending: true });
 
   if (error) throw error;
@@ -372,7 +373,9 @@ export async function getLeaderboardData() {
   if (profilesErr) throw profilesErr;
 
   // Query the tasks table directly for completed tasks with scores
-  const { data: tasks, error: tasksErr } = await supabase
+  let tasks: any[] = [];
+  
+  const { data: mainTasks, error: tasksErr } = await supabase
     .from("tasks")
     .select(`
       id,
@@ -390,7 +393,30 @@ export async function getLeaderboardData() {
     .not("score", "is", null)
     .order("completed_at", { ascending: false });
 
-  if (tasksErr) throw tasksErr;
+  if (tasksErr) {
+    console.warn("Falling back leaderboard fetch to ignore complexity column if missing:", tasksErr.message);
+    const { data: fallbackTasks, error: fallbackErr } = await supabase
+      .from("tasks")
+      .select(`
+        id,
+        name,
+        score,
+        priority,
+        deco,
+        completed_at,
+        due_date,
+        owner_id,
+        owner:profiles!tasks_owner_id_fkey(id, full_name)
+      `)
+      .eq("status", "tango_charlie")
+      .not("score", "is", null)
+      .order("completed_at", { ascending: false });
+
+    if (fallbackErr) throw fallbackErr;
+    tasks = fallbackTasks ?? [];
+  } else {
+    tasks = mainTasks ?? [];
+  }
 
   const now = new Date();
   const weekAgo = new Date();
@@ -504,6 +530,7 @@ export async function getDailyTasks() {
       daily_completions(id, completed_at, completed_by)
     `)
     .eq("status", "oscar_delta")
+    .eq("is_archived", false)
     .order("created_at", { ascending: false });
 
   // Fetch profiles to resolve wingmen in memory
@@ -523,6 +550,7 @@ export async function getDailyTasks() {
         owner2:profiles!tasks_owner2_id_fkey(id, full_name, email, avatar_url)
       `)
       .eq("status", "oscar_delta")
+      .eq("is_archived", false)
       .order("created_at", { ascending: false });
 
     if (fallbackError) throw fallbackError;
@@ -730,16 +758,66 @@ export async function saveTaskNote(taskId: string, content: string) {
 }
 
 export async function getTaskNotes(taskId: string) {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("task_notes")
+      .select(`
+        *,
+        author:profiles(id, full_name, avatar_url)
+      `)
+      .eq("task_id", taskId)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.warn("Returning empty array as fallback for getTaskNotes due to API/Schema cache error:", error.message);
+      return [];
+    }
+    return data || [];
+  } catch (err) {
+    console.warn("Fallback getTaskNotes due to missing table task_notes:", err);
+    return [];
+  }
+}
+
+export async function archiveTask(taskId: string, isArchived: boolean = true) {
   const supabase = await createClient();
   const { data, error } = await supabase
-    .from("task_notes")
-    .select(`
-      *,
-      author:profiles(id, full_name, avatar_url)
-    `)
-    .eq("task_id", taskId)
-    .order("created_at", { ascending: false });
+    .from("tasks")
+    .update({ is_archived: isArchived })
+    .eq("id", taskId)
+    .select()
+    .single();
 
   if (error) throw error;
-  return data;
+  revalidatePath("/", "layout");
+  return data as Task;
+}
+
+export async function getArchivedTasks() {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("tasks")
+    .select(`
+      *,
+      owner:profiles!tasks_owner_id_fkey(id, full_name, email, avatar_url),
+      owner2:profiles!tasks_owner2_id_fkey(id, full_name, email, avatar_url),
+      requested_by_user:profiles!tasks_requested_by_fkey(id, full_name, email, avatar_url)
+    `)
+    .eq("is_archived", true)
+    .order("updated_at", { ascending: false });
+
+  if (error) throw error;
+
+  // Fetch profiles to resolve wingmen in memory
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("id, full_name, email, avatar_url");
+
+  return (data ?? []).map((t: any) => ({
+    ...t,
+    wingmen: (t.wingmen_ids || [])
+      .map((id: string) => profiles?.find((p) => p.id === id))
+      .filter(Boolean),
+  })) as Task[];
 }

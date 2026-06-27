@@ -129,13 +129,21 @@ export function TaskCard({ task, onClick, draggable = true, onDragStart }: TaskC
 
       {/* Dependency Info */}
       {task.dependencies && task.dependencies.length > 0 && (
-        <div className="flex flex-col gap-0.5 mb-2 animate-in fade-in">
-          {dependencyNames && dependencyNames.length > 0 && (
-            <div className="flex items-center gap-1 text-[11px] text-blue-400">
-              <Link2 className="h-3 w-3" />
-              <span>Dependency on:: {dependencyNames.join(", ")}</span>
+        <div className="flex flex-col gap-1.5 mb-2 pt-2 border-t border-zinc-800/60 animate-in fade-in text-[10px] text-zinc-400">
+          <div className="text-[10px] font-bold text-blue-400 flex items-center gap-1 uppercase tracking-wider">
+            <Link2 className="h-3 w-3" />
+            <span>Dependency Details</span>
+          </div>
+          {task.dependencies.map((dep) => (
+            <div key={dep.id} className="flex flex-col pl-2 border-l border-zinc-700/60 leading-normal">
+              <div>
+                To Whom: <strong className="text-zinc-300">{dep.depends_on_user?.full_name || "Unknown"}</strong>
+              </div>
+              <div className="text-zinc-400 mt-0.5">
+                What: <span className="text-blue-300 italic">"{dep.reason}"</span>
+              </div>
             </div>
-          )}
+          ))}
         </div>
       )}
 

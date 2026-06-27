@@ -52,6 +52,7 @@ export interface Task {
   status: TaskStatus;
   labels: LabelCategory[];
   is_blocked: boolean;
+  is_archived: boolean;
   blocked_reason?: string | null;
   parent_task_id?: string | null;
   requested_by?: string | null;

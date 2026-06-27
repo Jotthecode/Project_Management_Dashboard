@@ -1,5 +1,5 @@
 -- =====================================================================
--- SCC (SmartScore Command Center) — Complexity & Notes Updates (004)
+-- SCC (SmartScore Command Center) — Complexity, Archive, & Notes (004)
 -- =====================================================================
 
 -- 1. Remove label limit constraints
@@ -12,7 +12,10 @@ ALTER TABLE public.tasks ADD COLUMN IF NOT EXISTS complexity deco_level NOT NULL
 -- 3. Add wingmen_ids column for unlimited owners
 ALTER TABLE public.tasks ADD COLUMN IF NOT EXISTS wingmen_ids uuid[] NOT NULL DEFAULT '{}';
 
--- 4. Create task_notes table for multi-note system
+-- 4. Add is_archived column to tasks table
+ALTER TABLE public.tasks ADD COLUMN IF NOT EXISTS is_archived boolean NOT NULL DEFAULT false;
+
+-- 5. Create task_notes table for multi-note system
 CREATE TABLE IF NOT EXISTS public.task_notes (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   task_id uuid NOT NULL REFERENCES public.tasks(id) ON DELETE CASCADE,
@@ -28,13 +31,16 @@ CREATE INDEX IF NOT EXISTS idx_task_notes_lookup ON public.task_notes(task_id, c
 -- Enable RLS on task_notes
 ALTER TABLE public.task_notes ENABLE ROW LEVEL SECURITY;
 
+-- Drop policy if exists to prevent duplicate failures
+DROP POLICY IF EXISTS "authenticated all task_notes" ON public.task_notes;
+
 -- Policy to allow CRUD operations for authenticated employees
 CREATE POLICY "authenticated all task_notes" 
   ON public.task_notes
   FOR ALL USING (auth.role() = 'authenticated') 
   WITH CHECK (auth.role() = 'authenticated');
 
--- 5. Update scoring function to incorporate separate Duration and Complexity weights
+-- 6. Update scoring function to incorporate separate Duration and Complexity weights
 CREATE OR REPLACE FUNCTION public.calculate_task_score(
   p_priority priority_level,
   p_deco deco_level,       -- Duration
@@ -69,7 +75,7 @@ BEGIN
 END;
 $$;
 
--- 6. Update task completion scoring trigger to pass new complexity value
+-- 7. Update task completion scoring trigger to pass new complexity value
 CREATE OR REPLACE FUNCTION public.handle_task_completion()
 RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN

@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   Trophy,
   CalendarCheck,
+  Archive,
   Settings,
   ChevronLeft,
   ChevronRight,
@@ -37,6 +38,7 @@ export function Sidebar({ profile }: SidebarProps) {
     { name: "Board", href: "/board", icon: LayoutDashboard },
     { name: "Leaderboard", href: "/leaderboard", icon: Trophy },
     { name: "Daily Tasks", href: "/daily", icon: CalendarCheck },
+    { name: "Archive", href: "/archive", icon: Archive },
     { name: "Settings", href: "/settings", icon: Settings },
   ];
 

@@ -34,8 +34,8 @@ import {
   type ComplexityLevel,
   type Profile,
 } from "@/lib/types";
-import { setBlocked, resolveDependency, deleteTask, updateTask, saveTaskNote, getTaskNotes } from "@/actions/tasks";
-import { Link2, Trophy, AlertTriangle, Users, Trash2, Edit, Save, X } from "lucide-react";
+import { setBlocked, resolveDependency, deleteTask, updateTask, saveTaskNote, getTaskNotes, archiveTask } from "@/actions/tasks";
+import { Link2, Trophy, AlertTriangle, Users, Trash2, Edit, Save, X, Archive } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -305,6 +305,25 @@ export function TaskDetailSheet({
         onOpenChange(false);
       } catch (err: any) {
         toast.error("Failed to delete task", {
+          description: err.message || "Something went wrong.",
+        });
+      }
+    });
+  }
+
+  function handleArchive() {
+    if (!window.confirm("Are you sure you want to archive this task? It will be moved to the archive list.")) {
+      return;
+    }
+
+    startTransition(async () => {
+      try {
+        await archiveTask(taskId, true);
+        toast.success("Task archived successfully");
+        onDeleted?.(taskId);
+        onOpenChange(false);
+      } catch (err: any) {
+        toast.error("Failed to archive task", {
           description: err.message || "Something went wrong.",
         });
       }
@@ -768,6 +787,15 @@ export function TaskDetailSheet({
                 >
                   <Edit className="h-4 w-4" />
                   Edit Task
+                </Button>
+                <Button
+                  variant="outline"
+                  disabled={isPending}
+                  onClick={handleArchive}
+                  className="col-span-2 flex items-center justify-center gap-1.5 py-2 text-xs font-semibold border-zinc-700 text-zinc-300 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors mt-2"
+                >
+                  <Archive className="h-4 w-4" />
+                  Archive Task
                 </Button>
               </div>
             )}

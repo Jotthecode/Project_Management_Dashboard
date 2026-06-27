@@ -75,8 +75,7 @@ export function LeaderboardTabs({
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {/* Total Points (All Time) */}
         <div
-          className="rounded-xl border border-zinc-800 p-5 flex items-center justify-between shadow-lg"
-          style={{ backgroundColor: "#2D2D2D" }}
+          className="rounded-xl border border-zinc-250 dark:border-zinc-800 p-5 flex items-center justify-between shadow-sm bg-white dark:bg-zinc-900"
         >
           <div className="space-y-1">
             <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider">Total Points (All Time)</p>
@@ -89,8 +88,7 @@ export function LeaderboardTabs({
 
         {/* My Rank This Week */}
         <div
-          className="rounded-xl border border-zinc-800 p-5 flex items-center justify-between shadow-lg"
-          style={{ backgroundColor: "#2D2D2D" }}
+          className="rounded-xl border border-zinc-250 dark:border-zinc-800 p-5 flex items-center justify-between shadow-sm bg-white dark:bg-zinc-900"
         >
           <div className="space-y-1">
             <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider">My Rank (This Week)</p>
@@ -105,8 +103,7 @@ export function LeaderboardTabs({
 
         {/* Completed This Week */}
         <div
-          className="rounded-xl border border-zinc-800 p-5 flex items-center justify-between shadow-lg"
-          style={{ backgroundColor: "#2D2D2D" }}
+          className="rounded-xl border border-zinc-250 dark:border-zinc-800 p-5 flex items-center justify-between shadow-sm bg-white dark:bg-zinc-900"
         >
           <div className="space-y-1">
             <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider">Completed (This Week)</p>
@@ -119,8 +116,7 @@ export function LeaderboardTabs({
 
         {/* Best Single Score Ever */}
         <div
-          className="rounded-xl border border-zinc-800 p-5 flex items-center justify-between shadow-lg"
-          style={{ backgroundColor: "#2D2D2D" }}
+          className="rounded-xl border border-zinc-250 dark:border-zinc-800 p-5 flex items-center justify-between shadow-sm bg-white dark:bg-zinc-900"
         >
           <div className="space-y-1">
             <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider">Best Score Ever</p>
@@ -133,7 +129,7 @@ export function LeaderboardTabs({
       </div>
 
       {/* Tabs Trigger */}
-      <div className="flex border-b border-zinc-800">
+      <div className="flex border-b border-zinc-250 dark:border-zinc-800">
         {tabs.map((tab) => (
           <button
             key={tab.id}
@@ -144,8 +140,8 @@ export function LeaderboardTabs({
             className={cn(
               "px-4 py-2 text-sm font-semibold border-b-2 transition-colors -mb-px",
               activeTab === tab.id
-                ? "border-blue-600 text-blue-400"
-                : "border-transparent text-zinc-400 hover:text-zinc-200"
+                ? "border-blue-600 text-blue-500 dark:text-blue-400"
+                : "border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
             )}
           >
             {tab.label}
@@ -154,15 +150,15 @@ export function LeaderboardTabs({
       </div>
 
       {/* Leaderboard Table */}
-      <div className="rounded-xl border border-zinc-800 overflow-hidden shadow-lg" style={{ backgroundColor: "#2D2D2D" }}>
+      <div className="rounded-xl border border-zinc-250 dark:border-zinc-800 overflow-hidden shadow-sm bg-white dark:bg-zinc-900">
         {currentData.length === 0 ? (
           <div className="p-8 text-center text-zinc-500">
             No tasks completed in this time range yet. Complete tasks on the board to earn points!
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left text-zinc-300">
-              <thead className="bg-[#1A1A1A]/80 text-zinc-400 text-xs uppercase tracking-wider">
+            <table className="w-full text-sm text-left text-zinc-700 dark:text-zinc-300">
+              <thead className="bg-zinc-50 dark:bg-[#1A1A1A]/80 text-zinc-500 dark:text-zinc-400 text-xs uppercase tracking-wider">
                 <tr>
                   <th className="px-6 py-4 font-semibold text-center w-20">Rank</th>
                   <th className="px-6 py-4 font-semibold">Name</th>

@@ -60,7 +60,7 @@ export function KanbanBoard({ initialTasks, profiles, currentUserId }: KanbanBoa
   }
  
   return (
-    <div className="h-full w-full" style={{ backgroundColor: "#1E1E1E" }}>
+    <div className="h-full w-full bg-background text-foreground">
       <div className="flex gap-4 overflow-x-auto h-full p-4">
         {COLUMN_ORDER.map((status) => {
           const isDaily = status === "oscar_delta";

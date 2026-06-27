@@ -861,29 +861,40 @@ export async function archiveTask(taskId: string, isArchived: boolean = true) {
 }
 
 export async function getArchivedTasks() {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("tasks")
-    .select(`
-      *,
-      owner:profiles!tasks_owner_id_fkey(id, full_name, email, avatar_url),
-      owner2:profiles!tasks_owner2_id_fkey(id, full_name, email, avatar_url),
-      requested_by_user:profiles!tasks_requested_by_fkey(id, full_name, email, avatar_url)
-    `)
-    .eq("is_archived", true)
-    .order("updated_at", { ascending: false });
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("tasks")
+      .select(`
+        *,
+        owner:profiles!tasks_owner_id_fkey(id, full_name, email, avatar_url),
+        owner2:profiles!tasks_owner2_id_fkey(id, full_name, email, avatar_url),
+        requested_by_user:profiles!tasks_requested_by_fkey(id, full_name, email, avatar_url)
+      `)
+      .eq("is_archived", true)
+      .order("updated_at", { ascending: false });
 
-  if (error) throw error;
+    if (error) {
+      if (error.code === "42703") {
+        console.warn("getArchivedTasks database error 42703 (missing column). Returning empty list.");
+        return [];
+      }
+      throw error;
+    }
 
-  // Fetch profiles to resolve wingmen in memory
-  const { data: profiles } = await supabase
-    .from("profiles")
-    .select("id, full_name, email, avatar_url");
+    // Fetch profiles to resolve wingmen in memory
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, full_name, email, avatar_url");
 
-  return (data ?? []).map((t: any) => ({
-    ...t,
-    wingmen: (t.wingmen_ids || [])
-      .map((id: string) => profiles?.find((p) => p.id === id))
-      .filter(Boolean),
-  })) as Task[];
+    return (data ?? []).map((t: any) => ({
+      ...t,
+      wingmen: (t.wingmen_ids || [])
+        .map((id: string) => profiles?.find((p) => p.id === id))
+        .filter(Boolean),
+    })) as Task[];
+  } catch (err: any) {
+    console.warn("Exception in getArchivedTasks, returning empty array:", err.message);
+    return [];
+  }
 }

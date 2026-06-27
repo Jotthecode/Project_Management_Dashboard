@@ -37,14 +37,10 @@ export function TaskCard({ task, onClick, draggable = true, onDragStart }: TaskC
       className={cn(
         "rounded-lg p-3 cursor-pointer border transition-colors",
         isCompleted 
-          ? "border-emerald-800/40 hover:border-emerald-500/60" 
-          : "border-transparent hover:border-zinc-600",
+          ? "border-emerald-250 dark:border-emerald-800/40 hover:border-emerald-450 dark:hover:border-emerald-500/60 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-900 dark:text-emerald-100" 
+          : "border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 hover:border-zinc-300 dark:hover:border-zinc-700",
         task.is_blocked && "ring-1 ring-red-500/60"
       )}
-      style={{ 
-        backgroundColor: isCompleted ? "#1b4332" : "#2D2D2D", 
-        color: "#FFFFFF" 
-      }}
     >
       {/* Priority + Duration + Complexity badges */}
       <div className="flex flex-wrap items-center gap-1.5 mb-2">

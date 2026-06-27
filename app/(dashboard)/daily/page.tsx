@@ -21,11 +21,11 @@ export default async function DailyTasksPage() {
   ]);
 
   return (
-    <main className="h-screen w-full overflow-y-auto flex flex-col p-6 space-y-6" style={{ backgroundColor: "#1E1E1E" }}>
+    <main className="h-screen w-full overflow-y-auto flex flex-col p-6 space-y-6 bg-background text-foreground">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Daily Tasks</h1>
+          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">Daily Tasks</h1>
           <p className="text-sm text-zinc-400">Oscar Delta — recurring tasks completed daily</p>
         </div>
       </div>

@@ -188,12 +188,11 @@ export function CreateTaskSheet({ profiles, trigger, defaultStatus }: CreateTask
 
       <SheetContent
         side="right"
-        className="w-full sm:max-w-md border-zinc-800 overflow-y-auto"
-        style={{ backgroundColor: "#1E1E1E", color: "#FFFFFF" }}
+        className="w-full sm:max-w-md border-zinc-200 dark:border-zinc-800 overflow-y-auto bg-white dark:bg-[#1E1E1E] text-zinc-900 dark:text-white"
       >
         <SheetHeader>
-          <SheetTitle className="text-white">New Task</SheetTitle>
-          <SheetDescription className="text-zinc-400">
+          <SheetTitle className="text-zinc-900 dark:text-zinc-50">New Task</SheetTitle>
+          <SheetDescription className="text-zinc-500 dark:text-zinc-400">
             Create a task on the SmartScore board. New tasks start in {STATUS_CONFIG[defaultStatus ?? "sierra_bravo"].label}.
           </SheetDescription>
         </SheetHeader>
@@ -497,7 +496,7 @@ export function CreateTaskSheet({ profiles, trigger, defaultStatus }: CreateTask
               </div>
 
               <div className="space-y-1">
-                <Label className="text-zinc-400 text-xs">To do what?</Label>
+                <Label className="text-zinc-400 text-xs">For</Label>
                 <Input
                   value={depReason}
                   onChange={(e) => setDepReason(e.target.value)}

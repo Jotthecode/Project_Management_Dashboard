@@ -22,10 +22,10 @@ export default async function LeaderboardPage() {
   const { weekly, monthly, allTime } = leaderboardData;
 
   return (
-    <main className="h-screen w-full overflow-y-auto flex flex-col p-6 space-y-6" style={{ backgroundColor: "#1E1E1E" }}>
+    <main className="h-screen w-full overflow-y-auto flex flex-col p-6 space-y-6 bg-background text-foreground">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-white tracking-tight">Leaderboard</h1>
+        <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">Leaderboard</h1>
         <p className="text-sm text-zinc-400">Track operations performance and points across the team</p>
       </div>
 

@@ -58,10 +58,9 @@ export function Sidebar({ profile }: SidebarProps) {
   return (
     <div
       className={cn(
-        "flex flex-col h-screen transition-all duration-300 border-r border-zinc-800 shrink-0 select-none",
+        "flex flex-col h-screen transition-all duration-300 border-r border-zinc-200 dark:border-zinc-800 shrink-0 select-none bg-zinc-50 dark:bg-[#1A1A1A] text-zinc-900 dark:text-white",
         isCollapsed ? "w-16" : "w-60"
       )}
-      style={{ backgroundColor: "#1A1A1A" }}
     >
       {/* Top Header / Brand */}
       <div className="flex items-center justify-between h-14 px-4 border-b border-zinc-800">

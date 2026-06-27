@@ -13,9 +13,9 @@ export default async function BoardPage() {
   const [tasks, profiles] = await Promise.all([getBoardTasks(), getProfiles()]);
 
   return (
-    <main className="h-screen w-full flex flex-col" style={{ backgroundColor: "#1E1E1E" }}>
-      <header className="px-4 py-3 border-b border-zinc-800 flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-white">SCC (SmartScore Command Center 📡)</h1>
+    <main className="h-screen w-full flex flex-col bg-background text-foreground">
+      <header className="px-4 py-3 border-b border-zinc-250 dark:border-zinc-800 flex items-center justify-between">
+        <h1 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">SCC (SmartScore Command Center 📡)</h1>
         <CreateTaskSheet profiles={profiles} />
       </header>
       <div className="flex-1 min-h-0">

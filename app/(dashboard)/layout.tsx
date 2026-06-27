@@ -28,7 +28,7 @@ export default async function DashboardLayout({
   const profile = profileResult.data;
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-[#1E1E1E]">
+    <div className="flex h-screen w-screen overflow-hidden bg-background text-foreground">
       <Sidebar profile={profile} />
       <div className="flex-1 flex flex-col h-full overflow-hidden">
         {children}

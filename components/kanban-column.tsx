@@ -41,12 +41,11 @@ export function KanbanColumn({ status, tasks, profiles, onTaskClick, onDrop }: K
     <div
       onDragOver={handleDragOver}
       onDrop={handleDrop}
-      className="flex flex-col flex-1 min-w-[280px] max-w-[340px] rounded-xl border border-zinc-800/80 shadow-md"
-      style={{ backgroundColor: "#141414" }}
+      className="flex flex-col flex-1 min-w-[280px] max-w-[340px] rounded-xl border border-zinc-200 dark:border-zinc-800/80 shadow-sm bg-zinc-100/50 dark:bg-zinc-900/30"
     >
-      <div className="px-3 pt-3 pb-2 sticky top-0 rounded-t-xl" style={{ backgroundColor: "#141414" }}>
+      <div className="px-3 pt-3 pb-2 sticky top-0 rounded-t-xl bg-zinc-100/50 dark:bg-zinc-900/30">
         <div className="flex items-baseline justify-between">
-          <h3 className="text-sm font-semibold tracking-wide" style={{ color: "#FFFFFF" }}>
+          <h3 className="text-sm font-semibold tracking-wide text-zinc-900 dark:text-zinc-50">
             {config.label}
             <span className="ml-2 text-xs font-normal text-zinc-500">{config.code}</span>
           </h3>

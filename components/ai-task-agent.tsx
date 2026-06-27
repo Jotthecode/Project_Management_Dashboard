@@ -178,11 +178,10 @@ export function AITaskAgent({ profiles }: AITaskAgentProps) {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm transition-opacity">
           {/* Modal Content */}
           <div
-            className="w-full max-w-lg rounded-xl border border-zinc-800 p-6 flex flex-col max-h-[90vh] overflow-y-auto"
-            style={{ backgroundColor: "#1E1E1E", color: "#FFFFFF" }}
+            className="w-full max-w-lg rounded-xl border border-zinc-200 dark:border-zinc-800 p-6 flex flex-col max-h-[90vh] overflow-y-auto bg-white dark:bg-[#1E1E1E] text-zinc-900 dark:text-white"
           >
             {/* Header */}
-            <div className="flex items-center justify-between pb-4 border-b border-zinc-800">
+            <div className="flex items-center justify-between pb-4 border-b border-zinc-250 dark:border-zinc-800">
               <div className="flex items-center gap-2 text-blue-400 font-bold">
                 <Wand2 className="h-5 w-5" />
                 <span>AI Task Agent</span>

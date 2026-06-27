@@ -45,17 +45,17 @@ export function SettingsClient({ profile }: SettingsClientProps) {
   }
 
   return (
-    <main className="h-screen w-full overflow-y-auto flex flex-col p-6 space-y-6" style={{ backgroundColor: "#1E1E1E" }}>
+    <main className="h-screen w-full overflow-y-auto flex flex-col p-6 space-y-6 bg-background text-foreground">
       <div>
-        <h1 className="text-2xl font-bold text-white tracking-tight">Settings</h1>
+        <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">Settings</h1>
         <p className="text-sm text-zinc-400">Configure your workspace preferences and profile settings</p>
       </div>
 
       <div className="max-w-xl space-y-6">
         {/* Theme Settings */}
-        <div className="rounded-xl border border-zinc-800 p-6 space-y-4" style={{ backgroundColor: "#2D2D2D" }}>
+        <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 p-6 space-y-4 bg-white dark:bg-zinc-900">
           <div>
-            <h2 className="text-sm font-semibold text-white uppercase tracking-wider flex items-center gap-2">
+            <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 uppercase tracking-wider flex items-center gap-2">
               Theme Configuration
             </h2>
             <p className="text-xs text-zinc-400 mt-1">Select your preferred system theme layout mode</p>
@@ -68,8 +68,8 @@ export function SettingsClient({ profile }: SettingsClientProps) {
                 onClick={() => setTheme("light")}
                 className={`flex-1 flex items-center justify-center gap-2.5 p-3 rounded-lg border text-xs font-semibold transition-all ${
                   theme === "light"
-                    ? "bg-zinc-100 border-zinc-300 text-zinc-950 font-bold"
-                    : "border-zinc-800 bg-zinc-900/40 text-zinc-400 hover:text-white"
+                    ? "bg-zinc-150 dark:bg-zinc-100 border-zinc-300 text-zinc-950 font-bold"
+                    : "border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/40 text-zinc-500 hover:text-zinc-900 dark:hover:text-white"
                 }`}
               >
                 <Sun className="h-4 w-4" />
@@ -81,7 +81,7 @@ export function SettingsClient({ profile }: SettingsClientProps) {
                 className={`flex-1 flex items-center justify-center gap-2.5 p-3 rounded-lg border text-xs font-semibold transition-all ${
                   theme === "dark"
                     ? "bg-zinc-900 border-zinc-700 text-white font-bold"
-                    : "border-zinc-800 bg-zinc-900/40 text-zinc-400 hover:text-white"
+                    : "border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/40 text-zinc-500 hover:text-zinc-900 dark:hover:text-white"
                 }`}
               >
                 <Moon className="h-4 w-4" />
@@ -92,9 +92,9 @@ export function SettingsClient({ profile }: SettingsClientProps) {
         </div>
 
         {/* Profile Settings */}
-        <div className="rounded-xl border border-zinc-800 p-6" style={{ backgroundColor: "#2D2D2D" }}>
+        <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 p-6 bg-white dark:bg-zinc-900">
           <div className="mb-4">
-            <h2 className="text-sm font-semibold text-white uppercase tracking-wider flex items-center gap-2">
+            <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 uppercase tracking-wider flex items-center gap-2">
               <User className="h-4 w-4 text-blue-400" /> Account Details
             </h2>
             <p className="text-xs text-zinc-400 mt-1">Update your display avatar details and full name identity</p>
@@ -102,23 +102,23 @@ export function SettingsClient({ profile }: SettingsClientProps) {
 
           <form onSubmit={handleSaveProfile} className="space-y-4">
             <div className="space-y-1.5">
-              <Label className="text-zinc-300 text-xs font-semibold">Email Address (Read-Only)</Label>
+              <Label className="text-zinc-700 dark:text-zinc-300 text-xs font-semibold">Email Address (Read-Only)</Label>
               <Input
                 value={profile.email}
                 disabled
-                className="bg-zinc-900/50 border-zinc-800 text-zinc-500 cursor-not-allowed text-xs h-9"
+                className="bg-zinc-100/50 dark:bg-zinc-900/50 border-zinc-250 dark:border-zinc-800 text-zinc-400 dark:text-zinc-505 cursor-not-allowed text-xs h-9"
               />
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="fullNameInput" className="text-zinc-300 text-xs font-semibold">Display Full Name</Label>
+              <Label htmlFor="fullNameInput" className="text-zinc-700 dark:text-zinc-300 text-xs font-semibold">Display Full Name</Label>
               <Input
                 id="fullNameInput"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 placeholder="Enter full name..."
                 required
-                className="bg-[#1E1E1E] border-zinc-750 text-white text-xs h-9"
+                className="bg-zinc-50 dark:bg-[#1E1E1E] border-zinc-250 dark:border-zinc-750 text-zinc-900 dark:text-white text-xs h-9"
               />
             </div>
 

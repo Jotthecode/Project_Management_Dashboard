@@ -350,13 +350,28 @@ export async function moveTask(taskId: string, newStatus: TaskStatus) {
     update.completed_at = new Date().toISOString();
   }
 
-  const { data: updated, error } = await supabase
+  let { data: updated, error } = await supabase
     .from("tasks")
     .update(update)
     .eq("id", taskId)
     .select()
     .single();
-  if (error) throw error;
+
+  if (error && (error.code === "PGRST204" || error.code === "42703" || error.message.includes("score") || error.message.includes("completed_at"))) {
+    console.warn("Retrying moveTask update without score and completed_at columns:", error.message);
+    delete update.score;
+    delete update.completed_at;
+    const { data: retryData, error: retryError } = await supabase
+      .from("tasks")
+      .update(update)
+      .eq("id", taskId)
+      .select()
+      .single();
+    if (retryError) throw retryError;
+    updated = retryData;
+  } else if (error) {
+    throw error;
+  }
 
   revalidatePath("/", "layout");
   return updated as Task;

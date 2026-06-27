@@ -66,7 +66,6 @@ export function CreateTaskSheet({ profiles, trigger, defaultStatus }: CreateTask
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [ownerId, setOwnerId] = useState<string>("");
-  const [owner2Id, setOwner2Id] = useState<string>("");
   const [wingmenIds, setWingmenIds] = useState<string[]>([]);
   const [selectedWingmanToAdd, setSelectedWingmanToAdd] = useState("");
   const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
@@ -82,7 +81,6 @@ export function CreateTaskSheet({ profiles, trigger, defaultStatus }: CreateTask
     setName("");
     setDescription("");
     setOwnerId("");
-    setOwner2Id("");
     setWingmenIds([]);
     setSelectedWingmanToAdd("");
     setDueDate(undefined);
@@ -149,7 +147,6 @@ export function CreateTaskSheet({ profiles, trigger, defaultStatus }: CreateTask
           name: name.trim(),
           description: description.trim(),
           ownerId,
-          owner2Id: owner2Id && owner2Id !== "unassigned" ? owner2Id : undefined,
           wingmenIds,
           dueDate: format(dueDate, "yyyy-MM-dd"),
           priority,
@@ -225,39 +222,21 @@ export function CreateTaskSheet({ profiles, trigger, defaultStatus }: CreateTask
             />
           </div>
 
-          {/* Owners (Up to 2) */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label className="text-zinc-700 dark:text-zinc-300">Primary Owner</Label>
-              <Select value={ownerId} onValueChange={setOwnerId}>
-                <SelectTrigger className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs">
-                  <SelectValue placeholder="Primary Owner" />
-                </SelectTrigger>
-                <SelectContent className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100">
-                  {profiles.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>
-                      {p.full_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-zinc-700 dark:text-zinc-300">Secondary Owner</Label>
-              <Select value={owner2Id} onValueChange={setOwner2Id}>
-                <SelectTrigger className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs">
-                  <SelectValue placeholder="Optional" />
-                </SelectTrigger>
-                <SelectContent className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100">
-                  <SelectItem value="unassigned">None</SelectItem>
-                  {profiles.map((p) => (
-                    <SelectItem key={p.id} value={p.id} disabled={p.id === ownerId}>
-                      {p.full_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          {/* Owner */}
+          <div className="space-y-1.5">
+            <Label className="text-zinc-700 dark:text-zinc-300">Task Owner</Label>
+            <Select value={ownerId} onValueChange={setOwnerId}>
+              <SelectTrigger className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs">
+                <SelectValue placeholder="Select task owner" />
+              </SelectTrigger>
+              <SelectContent className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100">
+                {profiles.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.full_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Wingmen (Collaborators) */}
@@ -276,7 +255,6 @@ export function CreateTaskSheet({ profiles, trigger, defaultStatus }: CreateTask
                     .filter(
                       (p) =>
                         p.id !== ownerId &&
-                        p.id !== owner2Id &&
                         !wingmenIds.includes(p.id)
                     )
                     .map((p) => (

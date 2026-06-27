@@ -71,7 +71,6 @@ export function TaskDetailSheet({
   const [editName, setEditName] = useState("");
   const [editDesc, setEditDesc] = useState("");
   const [editOwnerId, setEditOwnerId] = useState("");
-  const [editOwner2Id, setEditOwner2Id] = useState("");
   const [editWingmenIds, setEditWingmenIds] = useState<string[]>([]);
   const [selectedWingmanToAdd, setSelectedWingmanToAdd] = useState("");
   const [editDueDate, setEditDueDate] = useState("");
@@ -94,7 +93,6 @@ export function TaskDetailSheet({
       setEditName(task.name);
       setEditDesc(task.description || "");
       setEditOwnerId(task.owner_id);
-      setEditOwner2Id(task.owner2_id || "");
       setEditWingmenIds(task.wingmen_ids || []);
       setSelectedWingmanToAdd("");
       setEditDueDate(task.due_date ? new Date(task.due_date).toISOString().split("T")[0] : "");
@@ -266,7 +264,6 @@ export function TaskDetailSheet({
           name: editName.trim(),
           description: editDesc.trim(),
           ownerId: editOwnerId,
-          owner2Id: editOwner2Id && editOwner2Id !== "unassigned" ? editOwner2Id : null,
           wingmenIds: editWingmenIds,
           dueDate: editDueDate,
           priority: editPriority as PriorityLevel,
@@ -344,39 +341,21 @@ export function TaskDetailSheet({
         <div className="mt-8 space-y-8 text-sm">
           {isEditing ? (
             <div className="space-y-4">
-              {/* Owners (Primary & Secondary) */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label className="text-zinc-650 dark:text-zinc-300 text-xs">Primary Owner</Label>
-                  <Select value={editOwnerId} onValueChange={setEditOwnerId}>
-                    <SelectTrigger className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs mt-1">
-                      <SelectValue placeholder="Primary Owner" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100">
-                      {profiles.map((p) => (
-                        <SelectItem key={p.id} value={p.id}>
-                          {p.full_name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-zinc-650 dark:text-zinc-300 text-xs">Secondary Owner</Label>
-                  <Select value={editOwner2Id || "unassigned"} onValueChange={setEditOwner2Id}>
-                    <SelectTrigger className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs mt-1">
-                      <SelectValue placeholder="None" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100">
-                      <SelectItem value="unassigned">None</SelectItem>
-                      {profiles.map((p) => (
-                        <SelectItem key={p.id} value={p.id} disabled={p.id === editOwnerId}>
-                          {p.full_name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              {/* Owner */}
+              <div className="space-y-1.5">
+                <Label className="text-zinc-650 dark:text-zinc-300 text-xs">Task Owner</Label>
+                <Select value={editOwnerId} onValueChange={setEditOwnerId}>
+                  <SelectTrigger className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs mt-1">
+                    <SelectValue placeholder="Select task owner" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100">
+                    {profiles.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.full_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Wingmen Selection */}
@@ -395,7 +374,6 @@ export function TaskDetailSheet({
                         .filter(
                           (p) =>
                             p.id !== editOwnerId &&
-                            p.id !== editOwner2Id &&
                             !editWingmenIds.includes(p.id)
                         )
                         .map((p) => (
@@ -530,14 +508,7 @@ export function TaskDetailSheet({
               {/* Owners & Wingmen & due date */}
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
-                  <Field label="Primary Owner" value={task.owner?.full_name ?? "Unassigned"} />
-                  <Field label="Secondary Owner" value={task.owner2?.full_name ?? "None"} />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <Field
-                    label="Wingmen"
-                    value={task.wingmen?.map((w) => w.full_name).join(", ") || "None"}
-                  />
+                  <Field label="Task Owner" value={task.owner?.full_name ?? "Unassigned"} />
                   <Field
                     label="Due Date"
                     value={new Date(task.due_date).toLocaleDateString("en-US", {
@@ -547,6 +518,10 @@ export function TaskDetailSheet({
                     })}
                   />
                 </div>
+                <Field
+                  label="Wingmen"
+                  value={task.wingmen?.map((w) => w.full_name).join(", ") || "None"}
+                />
               </div>
             </>
           )}

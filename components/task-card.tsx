@@ -24,7 +24,6 @@ export function TaskCard({ task, onClick, draggable = true, onDragStart }: TaskC
   
   const allOwners = [
     task.owner?.full_name,
-    task.owner2?.full_name,
     ...(task.wingmen?.map((w) => w.full_name) || [])
   ].filter(Boolean);
   const ownerNames = allOwners.join(", ");

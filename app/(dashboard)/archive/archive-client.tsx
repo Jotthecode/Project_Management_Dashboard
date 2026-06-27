@@ -81,15 +81,13 @@ export function ArchiveClient({ initialTasks }: ArchiveClientProps) {
             
             const owners = [
               task.owner?.full_name,
-              task.owner2?.full_name,
               ...(task.wingmen?.map((w) => w.full_name) || [])
             ].filter(Boolean).join(", ");
 
             return (
               <div
                 key={task.id}
-                className="rounded-lg p-4 border border-zinc-800 hover:border-zinc-700 transition-colors flex flex-col justify-between"
-                style={{ backgroundColor: "#2D2D2D", color: "#FFFFFF" }}
+                className="rounded-lg p-4 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors flex flex-col justify-between"
               >
                 <div>
                   {/* Badges row */}

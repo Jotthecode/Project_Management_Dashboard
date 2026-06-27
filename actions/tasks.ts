@@ -147,25 +147,58 @@ export async function createDependency(
   const requestorName = requestorProfile?.full_name || "Unknown Requestor";
 
   // Create B's linked task — same Due Date, Priority, DECO/Complexity as parent.
-  const { data: linkedTask, error: linkedErr } = await supabase
+  const insertData: any = {
+    name: `[DEPENDENCY] ${reason}`,
+    description: `Requested by ${requestorName}: ${reason}`,
+    owner_id: dependsOnUserId,
+    due_date: parentTask.due_date,
+    priority: parentTask.priority,
+    deco: parentTask.deco,
+    complexity: parentTask.complexity || "medium",
+    labels: [],
+    status: "sierra_bravo",
+    parent_task_id: parentTask.id,
+    requested_by: parentTask.owner_id,
+    dependency_reason: reason,
+  };
+
+  let { data: linkedTask, error: linkedErr } = await supabase
     .from("tasks")
-    .insert({
-      name: `[DEPENDENCY] ${reason}`,
-      description: `Requested by ${requestorName}: ${reason}`,
-      owner_id: dependsOnUserId,
-      due_date: parentTask.due_date,
-      priority: parentTask.priority,
-      deco: parentTask.deco,
-      complexity: parentTask.complexity || "medium",
-      labels: [],
-      status: "sierra_bravo",
-      parent_task_id: parentTask.id,
-      requested_by: parentTask.owner_id,
-      dependency_reason: reason,
-    })
+    .insert(insertData)
     .select()
     .single();
-  if (linkedErr) throw linkedErr;
+
+  if (linkedErr && (linkedErr.code === "PGRST204" || linkedErr.message.includes("complexity") || linkedErr.message.includes("wingmen_ids"))) {
+    console.warn("Retrying dependency task insert without complexity and wingmen_ids columns:", linkedErr.message);
+    delete insertData.complexity;
+    delete insertData.wingmen_ids;
+
+    const { data: retryData, error: retryError } = await supabase
+      .from("tasks")
+      .insert(insertData)
+      .select()
+      .single();
+
+    if (retryError) {
+      if (retryError.code === "PGRST204" || retryError.message.includes("owner2_id")) {
+        console.warn("Retrying dependency task insert without owner2_id column:", retryError.message);
+        delete insertData.owner2_id;
+        const { data: finalData, error: finalError } = await supabase
+          .from("tasks")
+          .insert(insertData)
+          .select()
+          .single();
+        if (finalError) throw finalError;
+        linkedTask = finalData;
+      } else {
+        throw retryError;
+      }
+    } else {
+      linkedTask = retryData;
+    }
+  } else if (linkedErr) {
+    throw linkedErr;
+  }
 
   // Record the dependency edge on A's task, pointing at B's new task.
   const { error: depErr } = await supabase.from("task_dependencies").insert({

@@ -199,7 +199,7 @@ export function CreateTaskSheet({ profiles, trigger, defaultStatus }: CreateTask
         <form onSubmit={handleSubmit} className="mt-4 space-y-4 text-sm">
           {/* Task Name */}
           <div className="space-y-1.5">
-            <Label htmlFor="task-name" className="text-zinc-300">
+            <Label htmlFor="task-name" className="text-zinc-700 dark:text-zinc-300">
               Task Name
             </Label>
             <Input
@@ -207,13 +207,13 @@ export function CreateTaskSheet({ profiles, trigger, defaultStatus }: CreateTask
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Deploy Student Dashboard"
-              className="bg-[#2D2D2D] border-zinc-700 text-white placeholder:text-zinc-500"
+              className="bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600"
             />
           </div>
 
           {/* Description */}
           <div className="space-y-1.5">
-            <Label htmlFor="task-description" className="text-zinc-300">
+            <Label htmlFor="task-description" className="text-zinc-700 dark:text-zinc-300">
               Description
             </Label>
             <Textarea
@@ -221,19 +221,19 @@ export function CreateTaskSheet({ profiles, trigger, defaultStatus }: CreateTask
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="What needs to happen?"
-              className="bg-[#2D2D2D] border-zinc-700 text-white placeholder:text-zinc-500 min-h-[80px]"
+              className="bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 min-h-[80px]"
             />
           </div>
 
           {/* Owners (Up to 2) */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label className="text-zinc-300">Primary Owner</Label>
+              <Label className="text-zinc-700 dark:text-zinc-300">Primary Owner</Label>
               <Select value={ownerId} onValueChange={setOwnerId}>
-                <SelectTrigger className="bg-[#2D2D2D] border-zinc-700 text-white text-xs">
+                <SelectTrigger className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs">
                   <SelectValue placeholder="Primary Owner" />
                 </SelectTrigger>
-                <SelectContent className="bg-[#2D2D2D] border-zinc-700 text-white">
+                <SelectContent className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100">
                   {profiles.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
                       {p.full_name}
@@ -243,12 +243,12 @@ export function CreateTaskSheet({ profiles, trigger, defaultStatus }: CreateTask
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-zinc-300">Secondary Owner</Label>
+              <Label className="text-zinc-700 dark:text-zinc-300">Secondary Owner</Label>
               <Select value={owner2Id} onValueChange={setOwner2Id}>
-                <SelectTrigger className="bg-[#2D2D2D] border-zinc-700 text-white text-xs">
+                <SelectTrigger className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs">
                   <SelectValue placeholder="Optional" />
                 </SelectTrigger>
-                <SelectContent className="bg-[#2D2D2D] border-zinc-700 text-white">
+                <SelectContent className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100">
                   <SelectItem value="unassigned">None</SelectItem>
                   {profiles.map((p) => (
                     <SelectItem key={p.id} value={p.id} disabled={p.id === ownerId}>
@@ -262,16 +262,16 @@ export function CreateTaskSheet({ profiles, trigger, defaultStatus }: CreateTask
 
           {/* Wingmen (Collaborators) */}
           <div className="space-y-2">
-            <Label className="text-zinc-300 text-xs">Wingmen (Additional Owners)</Label>
+            <Label className="text-zinc-700 dark:text-zinc-300 text-xs">Wingmen (Additional Owners)</Label>
             <div className="flex gap-2">
               <Select
                 value={selectedWingmanToAdd}
                 onValueChange={setSelectedWingmanToAdd}
               >
-                <SelectTrigger className="bg-[#2D2D2D] border-zinc-700 text-white text-xs flex-1">
+                <SelectTrigger className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs flex-1">
                   <SelectValue placeholder="Add wingman..." />
                 </SelectTrigger>
-                <SelectContent className="bg-[#2D2D2D] border-zinc-700 text-white">
+                <SelectContent className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100">
                   {profiles
                     .filter(
                       (p) =>
@@ -289,7 +289,7 @@ export function CreateTaskSheet({ profiles, trigger, defaultStatus }: CreateTask
               <Button
                 type="button"
                 onClick={handleAddWingman}
-                className="bg-zinc-800 hover:bg-zinc-750 text-white text-xs border border-zinc-700 px-3 shrink-0 h-9"
+                className="bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-750 text-zinc-900 dark:text-white text-xs border border-zinc-200 dark:border-zinc-700 px-3 shrink-0 h-9"
               >
                 Add
               </Button>
@@ -321,22 +321,22 @@ export function CreateTaskSheet({ profiles, trigger, defaultStatus }: CreateTask
 
           {/* Due Date */}
           <div className="space-y-1.5">
-            <Label className="text-zinc-300">Due Date</Label>
+            <Label className="text-zinc-700 dark:text-zinc-300">Due Date</Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
                   type="button"
                   className={cn(
-                    "w-full justify-start text-left font-normal bg-[#2D2D2D] border-zinc-700 text-white hover:bg-[#3a3a3a]",
+                    "w-full justify-start text-left font-normal bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800",
                     !dueDate && "text-zinc-500"
                   )}
                 >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  <CalendarIcon className="mr-2 h-4 w-4 text-zinc-500" />
                   {dueDate ? format(dueDate, "PPP") : "Pick a date"}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 bg-[#2D2D2D] border-zinc-700">
+              <PopoverContent className="w-auto p-0 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100">
                 <Calendar
                   mode="single"
                   selected={dueDate}
@@ -348,12 +348,12 @@ export function CreateTaskSheet({ profiles, trigger, defaultStatus }: CreateTask
 
           {/* Priority */}
           <div className="space-y-1.5">
-            <Label className="text-zinc-300">Priority</Label>
+            <Label className="text-zinc-700 dark:text-zinc-300">Priority</Label>
             <Select value={priority} onValueChange={(v) => setPriority(v as PriorityLevel)}>
-              <SelectTrigger className="bg-[#2D2D2D] border-zinc-700 text-white">
+              <SelectTrigger className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100">
                 <SelectValue placeholder="Select priority" />
               </SelectTrigger>
-              <SelectContent className="bg-[#2D2D2D] border-zinc-700 text-white">
+              <SelectContent className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100">
                 {ALL_PRIORITIES.map((p) => (
                   <SelectItem key={p} value={p}>
                     <span className="flex items-center gap-2">
@@ -381,10 +381,10 @@ export function CreateTaskSheet({ profiles, trigger, defaultStatus }: CreateTask
                 </span>
               </div>
               <Select value={deco} onValueChange={(v) => setDeco(v as DecoLevel)}>
-                <SelectTrigger className="bg-[#2D2D2D] border-zinc-700 text-white text-xs">
+                <SelectTrigger className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs">
                   <SelectValue placeholder="Duration" />
                 </SelectTrigger>
-                <SelectContent className="bg-[#2D2D2D] border-zinc-700 text-white">
+                <SelectContent className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100">
                   {Object.keys(DECO_CONFIG).map((dKey) => (
                     <SelectItem key={dKey} value={dKey} className="text-xs">
                       {DECO_CONFIG[dKey as DecoLevel].label} ({DECO_CONFIG[dKey as DecoLevel].duration})
@@ -405,10 +405,10 @@ export function CreateTaskSheet({ profiles, trigger, defaultStatus }: CreateTask
                 </span>
               </div>
               <Select value={complexity} onValueChange={(v) => setComplexity(v as ComplexityLevel)}>
-                <SelectTrigger className="bg-[#2D2D2D] border-zinc-700 text-white text-xs">
+                <SelectTrigger className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs">
                   <SelectValue placeholder="Complexity" />
                 </SelectTrigger>
-                <SelectContent className="bg-[#2D2D2D] border-zinc-700 text-white">
+                <SelectContent className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100">
                   {Object.keys(DECO_CONFIG).map((dKey) => (
                     <SelectItem key={dKey} value={dKey} className="text-xs">
                       {DECO_CONFIG[dKey as DecoLevel].label}
@@ -421,7 +421,7 @@ export function CreateTaskSheet({ profiles, trigger, defaultStatus }: CreateTask
 
           {/* Labels (multi-select, max 2) */}
           <div className="space-y-1.5">
-            <Label className="text-zinc-300">
+            <Label className="text-zinc-700 dark:text-zinc-300">
               Labels <span className="text-zinc-500">(choose 1–2)</span>
             </Label>
             <div className="flex flex-wrap gap-1.5">
@@ -447,13 +447,13 @@ export function CreateTaskSheet({ profiles, trigger, defaultStatus }: CreateTask
           </div>
 
           {/* Dependencies (PRD) */}
-          <div className="space-y-3 pt-3 border-t border-zinc-800">
-            <Label className="text-zinc-300 font-semibold block text-xs uppercase tracking-wider">
+          <div className="space-y-3 pt-3 border-t border-zinc-250 dark:border-zinc-800">
+            <Label className="text-zinc-750 dark:text-zinc-300 font-semibold block text-xs uppercase tracking-wider">
               Dependencies
             </Label>
 
             {dependencies.length > 0 && (
-              <div className="flex flex-col gap-1.5 p-2 bg-[#2D2D2D]/50 rounded-lg border border-zinc-800">
+              <div className="flex flex-col gap-1.5 p-2 bg-zinc-50/70 dark:bg-[#2D2D2D]/50 rounded-lg border border-zinc-200 dark:border-zinc-800">
                 {dependencies.map((dep, idx) => {
                   const user = profiles.find((p) => p.id === dep.dependsOnUserId);
                   return (
@@ -477,14 +477,14 @@ export function CreateTaskSheet({ profiles, trigger, defaultStatus }: CreateTask
               </div>
             )}
 
-            <div className="space-y-2 bg-[#2D2D2D]/35 p-3 rounded-lg border border-zinc-800/85">
+            <div className="space-y-2 bg-zinc-50/40 dark:bg-zinc-900/30 p-3 rounded-lg border border-zinc-200 dark:border-zinc-800/85">
               <div className="space-y-1">
-                <Label className="text-zinc-400 text-xs">Depends on</Label>
+                <Label className="text-zinc-550 dark:text-zinc-400 text-xs">Depends on</Label>
                 <Select value={depUserId} onValueChange={setDepUserId}>
-                  <SelectTrigger className="bg-[#2D2D2D] border-zinc-700 text-white text-xs h-9">
+                  <SelectTrigger className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs h-9">
                     <SelectValue placeholder="Select user" />
                   </SelectTrigger>
-                  <SelectContent className="bg-[#2D2D2D] border-zinc-700 text-white">
+                  <SelectContent className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100">
                     {profiles.map((p) => (
                       <SelectItem key={p.id} value={p.id} disabled={p.id === ownerId}>
                         {p.full_name}
@@ -495,12 +495,12 @@ export function CreateTaskSheet({ profiles, trigger, defaultStatus }: CreateTask
               </div>
 
               <div className="space-y-1">
-                <Label className="text-zinc-400 text-xs">For</Label>
+                <Label className="text-zinc-550 dark:text-zinc-400 text-xs">For</Label>
                 <Input
                   value={depReason}
                   onChange={(e) => setDepReason(e.target.value)}
                   placeholder="e.g. Needs backend API design completed"
-                  className="bg-[#2D2D2D] border-zinc-700 text-white text-xs h-9 placeholder:text-zinc-600"
+                  className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs h-9 placeholder:text-zinc-400 dark:placeholder:text-zinc-600"
                 />
                 {depReason && depReason.trim().length <= 10 && (
                   <p className="text-[10px] text-red-400 mt-1">Reason must exceed 10 characters.</p>

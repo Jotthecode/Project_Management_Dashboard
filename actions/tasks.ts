@@ -342,7 +342,21 @@ export async function getBoardTasks() {
 
   if (error && error.code === "42703") {
     console.warn("Falling back getBoardTasks fetch to ignore is_archived filter since column is missing:", error.message);
-    const { data: fallbackData, error: fallbackError } = await query
+    const { data: fallbackData, error: fallbackError } = await supabase
+      .from("tasks")
+      .select(`
+        *,
+        owner:profiles!tasks_owner_id_fkey(id, full_name, email, avatar_url),
+        owner2:profiles!tasks_owner2_id_fkey(id, full_name, email, avatar_url),
+        requested_by_user:profiles!tasks_requested_by_fkey(id, full_name, email, avatar_url),
+        dependencies:task_dependencies!task_dependencies_task_id_fkey(
+          id, reason, linked_task_id,
+          depends_on_user:profiles!task_dependencies_depends_on_user_id_fkey(id, full_name)
+        ),
+        contributors:task_contributors(
+          profile:profiles(id, full_name, email, avatar_url)
+        )
+      `)
       .order("created_at", { ascending: true });
     if (fallbackError) throw fallbackError;
     data = fallbackData;

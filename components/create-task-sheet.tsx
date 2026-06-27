@@ -188,12 +188,11 @@ export function CreateTaskSheet({ profiles, trigger, defaultStatus }: CreateTask
 
       <SheetContent
         side="right"
-        className="w-full sm:max-w-md border-zinc-200 dark:border-zinc-800 overflow-y-auto bg-white dark:bg-[#1E1E1E] text-zinc-900 dark:text-white"
+        className="w-full sm:max-w-xl border-l border-zinc-200 dark:border-zinc-800 p-6 sm:p-10 overflow-y-auto bg-white dark:bg-[#1E1E1E] text-zinc-900 dark:text-white"
       >
-        <SheetHeader>
-          <SheetTitle className="text-zinc-900 dark:text-zinc-50">New Task</SheetTitle>
-          <SheetDescription className="text-zinc-500 dark:text-zinc-400">
-            Create a task on the SmartScore board. New tasks start in {STATUS_CONFIG[defaultStatus ?? "sierra_bravo"].label}.
+        <SheetHeader className="pb-5 border-b border-zinc-200 dark:border-zinc-800/85">
+          <SheetTitle className="text-zinc-900 dark:text-zinc-50 text-2xl font-bold leading-tight">New Task</SheetTitle>
+          <SheetDescription className="text-zinc-550 dark:text-zinc-400 text-sm mt-2 leading-relaxed">Create a task on the SmartScore board. New tasks start in {STATUS_CONFIG[defaultStatus ?? "sierra_bravo"].label}.
           </SheetDescription>
         </SheetHeader>
 

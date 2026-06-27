@@ -334,14 +334,14 @@ export function TaskDetailSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="w-full sm:max-w-lg border-l border-zinc-200 dark:border-zinc-800 p-6 sm:p-10 overflow-y-auto bg-white dark:bg-[#1E1E1E] text-zinc-900 dark:text-white"
+        className="w-full sm:max-w-xl border-l border-zinc-200 dark:border-zinc-800 p-6 sm:p-10 overflow-y-auto bg-white dark:bg-[#1E1E1E] text-zinc-900 dark:text-white"
       >
-        <SheetHeader className="pb-4 border-b border-zinc-200 dark:border-zinc-800/85">
-          <SheetTitle className="text-zinc-900 dark:text-zinc-50 text-xl font-bold">{task.name}</SheetTitle>
-          <SheetDescription className="text-zinc-500 dark:text-zinc-400 text-xs mt-1.5 leading-relaxed">{task.description}</SheetDescription>
+        <SheetHeader className="pb-5 border-b border-zinc-200 dark:border-zinc-800/85">
+          <SheetTitle className="text-zinc-900 dark:text-zinc-50 text-2xl font-bold leading-tight">{task.name}</SheetTitle>
+          <SheetDescription className="text-zinc-500 dark:text-zinc-400 text-sm mt-2 leading-relaxed">{task.description}</SheetDescription>
         </SheetHeader>
 
-        <div className="mt-6 space-y-6 text-sm px-1">
+        <div className="mt-8 space-y-8 text-sm">
           {isEditing ? (
             <div className="space-y-4">
               {/* Owners (Primary & Secondary) */}
@@ -554,21 +554,21 @@ export function TaskDetailSheet({
           {/* Priority & Duration & Complexity read-only */}
           {!isEditing && (
             <div className="grid grid-cols-3 gap-2">
-              <div className="rounded-lg p-3 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-sm">
+              <div className="rounded-xl p-5 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-sm">
                 <p className="text-xs text-zinc-400 mb-1">Priority</p>
                 <div className="flex items-center gap-1.5">
                   <span className="h-2 w-2 rounded-full" style={{ backgroundColor: priority.color }} />
                   <span className="text-xs">{task.priority}</span>
                 </div>
               </div>
-              <div className="rounded-lg p-3 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-sm">
+              <div className="rounded-xl p-5 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-sm">
                 <p className="text-xs text-zinc-400 mb-1">Duration</p>
                 <div className="flex items-center gap-1.5">
                   <span className="h-2 w-2 rounded-full" style={{ backgroundColor: deco.color }} />
                   <span className="text-xs">{deco.label}</span>
                 </div>
               </div>
-              <div className="rounded-lg p-3 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-sm">
+              <div className="rounded-xl p-5 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-sm">
                 <p className="text-xs text-zinc-400 mb-1">Complexity</p>
                 <div className="flex items-center gap-1.5">
                   <span className="h-2 w-2 rounded-full" style={{ backgroundColor: complexity.color }} />
@@ -633,7 +633,7 @@ export function TaskDetailSheet({
           )}
 
           {/* Blocked badge */}
-          <div className="rounded-lg p-3 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-sm">
+          <div className="rounded-xl p-5 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-sm">
             <div className="flex items-center justify-between">
               <p className="text-xs text-zinc-400 flex items-center gap-1">
                 <AlertTriangle className="h-3 w-3" /> Blocked Badge
@@ -854,7 +854,7 @@ export function TaskDetailSheet({
 
 function Field({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg p-3 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-sm">
+    <div className="rounded-xl p-5 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-sm">
       <p className="text-xs text-zinc-400 mb-1">{label}</p>
       <p className="text-sm">{value}</p>
     </div>

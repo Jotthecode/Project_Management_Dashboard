@@ -315,15 +315,15 @@ export function TaskDetailSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="w-full sm:max-w-md border-zinc-800"
+        className="w-full sm:max-w-lg border-zinc-800 p-8 overflow-y-auto"
         style={{ backgroundColor: "#1E1E1E", color: "#FFFFFF" }}
       >
-        <SheetHeader>
-          <SheetTitle className="text-white">{task.name}</SheetTitle>
-          <SheetDescription className="text-zinc-400">{task.description}</SheetDescription>
+        <SheetHeader className="pb-4 border-b border-zinc-800/85">
+          <SheetTitle className="text-white text-xl font-bold">{task.name}</SheetTitle>
+          <SheetDescription className="text-zinc-400 text-xs mt-1.5 leading-relaxed">{task.description}</SheetDescription>
         </SheetHeader>
 
-        <div className="mt-4 space-y-5 text-sm">
+        <div className="mt-6 space-y-6 text-sm">
           {isEditing ? (
             <div className="space-y-4">
               {/* Owners (Primary & Secondary) */}

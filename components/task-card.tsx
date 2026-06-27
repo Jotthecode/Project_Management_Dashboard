@@ -16,9 +16,11 @@ interface TaskCardProps {
 export function TaskCard({ task, onClick, draggable = true, onDragStart }: TaskCardProps) {
   const priority = PRIORITY_CONFIG[task.priority];
   const deco = DECO_CONFIG[task.deco];
+  const isCompleted = task.status === "tango_charlie";
 
   // PRD: "Dependency on:: User Name" — render for each dependency this task has
   const dependencyNames = task.dependencies?.map((d) => d.depends_on_user?.full_name).filter(Boolean);
+  const ownerNames = [task.owner?.full_name, task.owner2?.full_name].filter(Boolean).join(" & ");
 
   return (
     <div
@@ -26,11 +28,16 @@ export function TaskCard({ task, onClick, draggable = true, onDragStart }: TaskC
       onDragStart={(e) => onDragStart?.(e, task)}
       onClick={() => onClick?.(task)}
       className={cn(
-        "rounded-lg p-3 cursor-pointer border border-transparent transition-colors",
-        "hover:border-zinc-600",
+        "rounded-lg p-3 cursor-pointer border transition-colors",
+        isCompleted 
+          ? "border-emerald-800/40 hover:border-emerald-500/60" 
+          : "border-transparent hover:border-zinc-600",
         task.is_blocked && "ring-1 ring-red-500/60"
       )}
-      style={{ backgroundColor: "#2D2D2D", color: "#FFFFFF" }}
+      style={{ 
+        backgroundColor: isCompleted ? "#1b4332" : "#2D2D2D", 
+        color: "#FFFFFF" 
+      }}
     >
       {/* Priority + Complexity oval badges */}
       <div className="flex flex-wrap items-center gap-1.5 mb-2.5">
@@ -84,7 +91,12 @@ export function TaskCard({ task, onClick, draggable = true, onDragStart }: TaskC
             <Badge
               key={label}
               variant="outline"
-              className="text-[10px] px-1.5 py-0 border-zinc-600 text-zinc-300"
+              className={cn(
+                "text-[10px] px-1.5 py-0",
+                label === "blocking_task" 
+                  ? "border-red-500 bg-red-500/10 text-red-450 font-bold"
+                  : "border-zinc-600 text-zinc-300"
+              )}
             >
               {LABEL_CONFIG[label].label}
             </Badge>
@@ -120,9 +132,11 @@ export function TaskCard({ task, onClick, draggable = true, onDragStart }: TaskC
         </div>
       )}
 
-      {/* Footer: owner + due date */}
+      {/* Footer: owner(s) + due date */}
       <div className="flex items-center justify-between text-[11px] text-zinc-400 mt-1">
-        <span className="truncate max-w-[60%]">{task.owner?.full_name ?? "Unassigned"}</span>
+        <span className="truncate max-w-[65%]" title={ownerNames}>
+          {ownerNames || "Unassigned"}
+        </span>
         <span>{new Date(task.due_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
       </div>
     </div>

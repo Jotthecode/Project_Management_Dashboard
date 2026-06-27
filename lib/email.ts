@@ -25,7 +25,7 @@ export async function sendEmail({
   try {
     const resend = new Resend(apiKey);
     const { data, error } = await resend.emails.send({
-      from: "SmartScore <onboarding@resend.dev>",
+      from: "SCC <onboarding@resend.dev>",
       to: [to],
       subject,
       html,

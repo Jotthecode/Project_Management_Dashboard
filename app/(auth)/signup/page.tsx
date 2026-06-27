@@ -51,11 +51,11 @@ export default function SignupPage() {
       <div className="w-full max-w-md rounded-xl border border-zinc-800 p-8 shadow-2xl space-y-6" style={{ backgroundColor: "#1A1A1A" }}>
         {/* Header */}
         <div className="text-center space-y-2">
-          <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600">
-            <span className="text-white font-black text-xl">S</span>
+          <div className="mx-auto flex h-10 px-3 items-center justify-center rounded-lg bg-blue-600 w-fit">
+            <span className="text-white font-black text-lg tracking-wider">SCC</span>
           </div>
           <h1 className="text-2xl font-bold text-white tracking-tight">Create Account</h1>
-          <p className="text-sm text-zinc-400">Join SmartScore operations tool</p>
+          <p className="text-sm text-zinc-400">Join SCC (SmartScore Command Center 📡)</p>
         </div>
 
         {/* Form */}
@@ -86,7 +86,7 @@ export default function SignupPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="you@smartscore.com"
+                placeholder="you@scc.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="bg-[#2D2D2D] border-zinc-700 text-white placeholder:text-zinc-500 pl-10"

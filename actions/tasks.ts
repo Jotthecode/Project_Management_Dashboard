@@ -21,6 +21,7 @@ export interface CreateTaskInput {
   name: string;
   description: string;
   ownerId: string;
+  owner2Id?: string;
   dueDate: string; // ISO date
   priority: PriorityLevel;
   deco: DecoLevel;
@@ -43,6 +44,7 @@ export async function createTask(input: CreateTaskInput) {
       name: input.name,
       description: input.description,
       owner_id: input.ownerId,
+      owner2_id: input.owner2Id || null,
       due_date: input.dueDate,
       priority: input.priority,
       deco: input.deco,
@@ -90,6 +92,10 @@ export async function createDependency(
   dependsOnUserId: string,
   reason: string
 ) {
+  if (reason.trim().length <= 10) {
+    throw new Error("Dependency reason must exceed 10 characters.");
+  }
+
   const supabase = await createClient();
 
   const { data: parentTask, error: parentErr } = await supabase
@@ -103,13 +109,13 @@ export async function createDependency(
   const { data: linkedTask, error: linkedErr } = await supabase
     .from("tasks")
     .insert({
-      name: `[Dependency] ${parentTask.name}`,
+      name: `[DEPENDENCY] ${reason}`,
       description: `Requested by ${parentTask.owner_id}: ${reason}`,
       owner_id: dependsOnUserId,
       due_date: parentTask.due_date,
       priority: parentTask.priority,
       deco: parentTask.deco,
-      labels: parentTask.labels,
+      labels: ["blocking_task"],
       status: "sierra_bravo",
       parent_task_id: parentTask.id,
       requested_by: parentTask.owner_id,
@@ -186,14 +192,27 @@ export async function createDependency(
 export async function resolveDependency(dependencyId: string) {
   const supabase = await createClient();
 
-  // Fetch dependency to get the associated parent task ID
+  // Fetch logged in user
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+
+  // Fetch dependency to get the associated parent task ID and owner
   const { data: dep, error: fetchErr } = await supabase
     .from("task_dependencies")
-    .select("task_id")
+    .select(`
+      task_id,
+      task:tasks(owner_id)
+    `)
     .eq("id", dependencyId)
     .single();
 
   if (fetchErr) throw fetchErr;
+
+  // Restrict resolving dependency solely to original blocked task owner
+  const blockedTaskOwnerId = (dep.task as any)?.owner_id;
+  if (blockedTaskOwnerId && blockedTaskOwnerId !== user.id) {
+    throw new Error("Only the owner of the original blocked task can resolve this dependency.");
+  }
 
   const { error } = await supabase
     .from("task_dependencies")
@@ -303,6 +322,7 @@ export async function getBoardTasks() {
       `
       *,
       owner:profiles!tasks_owner_id_fkey(id, full_name, email, avatar_url),
+      owner2:profiles!tasks_owner2_id_fkey(id, full_name, email, avatar_url),
       dependencies:task_dependencies!task_dependencies_task_id_fkey(
         id, reason, linked_task_id,
         depends_on_user:profiles!task_dependencies_depends_on_user_id_fkey(id, full_name)
@@ -327,7 +347,11 @@ export async function getBoardTasks() {
 // LEADERBOARD (Weekly / Monthly / All Time)
 // =====================================================================
 
-export async function getLeaderboard(range: "weekly" | "monthly" | "all_time") {
+// =====================================================================
+// LEADERBOARD (Weekly / Monthly / All Time)
+// =====================================================================
+
+export async function getLeaderboardData() {
   const supabase = await createClient();
 
   // Fetch all profiles so that everyone shows up in the leaderboard
@@ -336,140 +360,118 @@ export async function getLeaderboard(range: "weekly" | "monthly" | "all_time") {
     .select("id, full_name");
   if (profilesErr) throw profilesErr;
 
-  let query = supabase
-    .from("leaderboard")
-    .select("*")
+  // Query the tasks table directly for completed tasks with scores
+  const { data: tasks, error: tasksErr } = await supabase
+    .from("tasks")
+    .select(`
+      id,
+      name,
+      score,
+      priority,
+      deco,
+      completed_at,
+      due_date,
+      owner_id,
+      owner:profiles!tasks_owner_id_fkey(id, full_name)
+    `)
+    .eq("status", "tango_charlie")
+    .not("score", "is", null)
     .order("completed_at", { ascending: false });
 
-  if (range === "weekly") {
-    const weekAgo = new Date();
-    weekAgo.setDate(weekAgo.getDate() - 7);
-    query = query.gte("completed_at", weekAgo.toISOString());
-  } else if (range === "monthly") {
-    const monthAgo = new Date();
-    monthAgo.setMonth(monthAgo.getMonth() - 1);
-    query = query.gte("completed_at", monthAgo.toISOString());
-  }
+  if (tasksErr) throw tasksErr;
 
-  let { data, error } = await query;
-  if (error) {
-    // Fallback: Query the tasks table directly if the view doesn't have the new columns yet
-    const { data: fallbackTasks, error: fallbackErr } = await supabase
-      .from("tasks")
-      .select(`
-        id,
-        name,
-        score,
-        priority,
-        deco,
-        completed_at,
-        due_date,
-        owner_id,
-        owner:profiles!tasks_owner_id_fkey(id, full_name)
-      `)
-      .eq("status", "tango_charlie")
-      .not("score", "is", null)
-      .order("completed_at", { ascending: false });
+  const now = new Date();
+  const weekAgo = new Date();
+  weekAgo.setDate(weekAgo.getDate() - 7);
+  const monthAgo = new Date();
+  monthAgo.setMonth(monthAgo.getMonth() - 1);
 
-    if (fallbackErr) throw fallbackErr;
+  // Helper function to build leaderboard aggregations
+  const buildLeaderboard = (filteredTasks: any[]) => {
+    const byUser = new Map<string, {
+      full_name: string;
+      totalPoints: number;
+      tasksCompleted: number;
+      bestScore: number;
+      tasks: any[];
+    }>();
 
-    data = (fallbackTasks ?? []).map((t: any) => ({
-      user_id: t.owner_id,
-      full_name: t.owner?.full_name ?? "Unknown",
-      task_id: t.id,
-      task_name: t.name,
-      score: t.score,
-      priority: t.priority,
-      deco: t.deco,
-      completed_at: t.completed_at,
-      due_date: t.due_date,
-    }));
-
-    // Re-apply range filter locally for the fallback query
-    if (range === "weekly") {
-      const weekAgo = new Date();
-      weekAgo.setDate(weekAgo.getDate() - 7);
-      data = data.filter((row: any) => row.completed_at && new Date(row.completed_at) >= weekAgo);
-    } else if (range === "monthly") {
-      const monthAgo = new Date();
-      monthAgo.setMonth(monthAgo.getMonth() - 1);
-      data = data.filter((row: any) => row.completed_at && new Date(row.completed_at) >= monthAgo);
-    }
-  }
-
-  // Initialize map with all profiles
-  const byUser = new Map<string, {
-    full_name: string;
-    totalPoints: number;
-    tasksCompleted: number;
-    bestScore: number;
-    tasks: any[];
-  }>();
-
-  for (const profile of profiles ?? []) {
-    byUser.set(profile.id, {
-      full_name: profile.full_name,
-      totalPoints: 0,
-      tasksCompleted: 0,
-      bestScore: 0,
-      tasks: [],
-    });
-  }
-
-  // Helper function to parse/calculate days early
-  const getDaysEarly = (dueDateStr: string, completedDateStr: string): number => {
-    if (!dueDateStr || !completedDateStr) return 0;
-    const due = new Date(dueDateStr);
-    const completed = new Date(completedDateStr.split("T")[0]);
-    const diffTime = due.getTime() - completed.getTime();
-    return Math.round(diffTime / (1000 * 60 * 60 * 24));
-  };
-
-  // Aggregate by user
-  for (const row of data ?? []) {
-    const existing = byUser.get(row.user_id);
-    const scoreVal = Number(row.score) || 0;
-
-    const taskObj = {
-      task_id: row.task_id,
-      task_name: row.task_name,
-      priority: row.priority || "P3",
-      deco: row.deco || "medium",
-      score: scoreVal,
-      completed_at: row.completed_at,
-      due_date: row.due_date,
-      days_early: getDaysEarly(row.due_date, row.completed_at),
-    };
-
-    if (existing) {
-      existing.totalPoints += scoreVal;
-      existing.tasksCompleted += 1;
-      if (scoreVal > existing.bestScore) {
-        existing.bestScore = scoreVal;
-      }
-      existing.tasks.push(taskObj);
-    } else {
-      byUser.set(row.user_id, {
-        full_name: row.full_name,
-        totalPoints: scoreVal,
-        tasksCompleted: 1,
-        bestScore: scoreVal,
-        tasks: [taskObj],
+    for (const profile of profiles ?? []) {
+      byUser.set(profile.id, {
+        full_name: profile.full_name,
+        totalPoints: 0,
+        tasksCompleted: 0,
+        bestScore: 0,
+        tasks: [],
       });
     }
-  }
 
-  return Array.from(byUser.entries())
-    .map(([userId, v]) => ({
-      userId,
-      full_name: v.full_name,
-      totalPoints: Math.round(v.totalPoints * 100) / 100,
-      tasksCompleted: v.tasksCompleted,
-      bestScore: Math.round(v.bestScore * 100) / 100,
-      avgScore: v.tasksCompleted > 0 ? Math.round((v.totalPoints / v.tasksCompleted) * 100) / 100 : 0,
-      tasks: v.tasks,
-    }))
-    .sort((a, b) => b.totalPoints - a.totalPoints);
+    const getDaysEarly = (dueDateStr: string, completedDateStr: string): number => {
+      if (!dueDateStr || !completedDateStr) return 0;
+      const due = new Date(dueDateStr);
+      const completed = new Date(completedDateStr.split("T")[0]);
+      const diffTime = due.getTime() - completed.getTime();
+      return Math.round(diffTime / (1000 * 60 * 60 * 24));
+    };
+
+    for (const row of filteredTasks) {
+      const existing = byUser.get(row.owner_id);
+      const scoreVal = Number(row.score) || 0;
+
+      const taskObj = {
+        task_id: row.id,
+        task_name: row.name,
+        priority: row.priority || "P3",
+        deco: row.deco || "medium",
+        score: scoreVal,
+        completed_at: row.completed_at,
+        due_date: row.due_date,
+        days_early: getDaysEarly(row.due_date, row.completed_at),
+      };
+
+      if (existing) {
+        existing.totalPoints += scoreVal;
+        existing.tasksCompleted += 1;
+        if (scoreVal > existing.bestScore) {
+          existing.bestScore = scoreVal;
+        }
+        existing.tasks.push(taskObj);
+      } else {
+        byUser.set(row.owner_id, {
+          full_name: row.owner?.full_name ?? "Unknown",
+          totalPoints: scoreVal,
+          tasksCompleted: 1,
+          bestScore: scoreVal,
+          tasks: [taskObj],
+        });
+      }
+    }
+
+    return Array.from(byUser.entries())
+      .map(([userId, v]) => ({
+        userId,
+        full_name: v.full_name,
+        totalPoints: Math.round(v.totalPoints * 100) / 100,
+        tasksCompleted: v.tasksCompleted,
+        bestScore: Math.round(v.bestScore * 100) / 100,
+        avgScore: v.tasksCompleted > 0 ? Math.round((v.totalPoints / v.tasksCompleted) * 100) / 100 : 0,
+        tasks: v.tasks,
+      }))
+      .sort((a, b) => b.totalPoints - a.totalPoints);
+  };
+
+  const weeklyTasks = (tasks ?? []).filter(
+    (t: any) => t.completed_at && new Date(t.completed_at) >= weekAgo
+  );
+  const monthlyTasks = (tasks ?? []).filter(
+    (t: any) => t.completed_at && new Date(t.completed_at) >= monthAgo
+  );
+
+  return {
+    weekly: buildLeaderboard(weeklyTasks),
+    monthly: buildLeaderboard(monthlyTasks),
+    allTime: buildLeaderboard(tasks ?? []),
+  };
 }
 
 // =====================================================================
@@ -484,6 +486,7 @@ export async function getDailyTasks() {
     .select(`
       *,
       owner:profiles!tasks_owner_id_fkey(id, full_name, email, avatar_url),
+      owner2:profiles!tasks_owner2_id_fkey(id, full_name, email, avatar_url),
       daily_completions(id, completed_at, completed_by)
     `)
     .eq("status", "oscar_delta")
@@ -497,7 +500,8 @@ export async function getDailyTasks() {
       .from("tasks")
       .select(`
         *,
-        owner:profiles!tasks_owner_id_fkey(id, full_name, email, avatar_url)
+        owner:profiles!tasks_owner_id_fkey(id, full_name, email, avatar_url),
+        owner2:profiles!tasks_owner2_id_fkey(id, full_name, email, avatar_url)
       `)
       .eq("status", "oscar_delta")
       .order("created_at", { ascending: false });
@@ -532,6 +536,31 @@ export async function markDailyDone(taskId: string) {
 export async function deleteTask(taskId: string) {
   const supabase = await createClient();
 
+  // Fetch logged in user
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+
+  // Fetch task details to check parent task ownership
+  const { data: task, error: fetchErr } = await supabase
+    .from("tasks")
+    .select("*")
+    .eq("id", taskId)
+    .single();
+  if (fetchErr) throw fetchErr;
+
+  // Restrict deletion of dependency tasks to owner of original task
+  if (task.parent_task_id) {
+    const { data: parentTask } = await supabase
+      .from("tasks")
+      .select("owner_id")
+      .eq("id", task.parent_task_id)
+      .single();
+
+    if (parentTask && parentTask.owner_id !== user.id) {
+      throw new Error("Only the owner of the original blocked task can delete this dependency task.");
+    }
+  }
+
   const { error } = await supabase
     .from("tasks")
     .delete()
@@ -539,4 +568,94 @@ export async function deleteTask(taskId: string) {
 
   if (error) throw error;
   revalidatePath("/", "layout");
+}
+
+// =====================================================================
+// DAILY NOTES
+// =====================================================================
+
+export async function saveDailyNote(taskId: string, content: string, dateStr: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+
+  const { data, error } = await supabase
+    .from("daily_notes")
+    .upsert({
+      task_id: taskId,
+      author_id: user.id,
+      note_date: dateStr,
+      content: content.trim()
+    }, { onConflict: "task_id,author_id,note_date" })
+    .select()
+    .single();
+
+  if (error) throw error;
+  revalidatePath("/daily");
+  return data;
+}
+
+export async function getDailyNotes(dateStr: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("daily_notes")
+    .select(`
+      *,
+      author:profiles(id, full_name, avatar_url)
+    `)
+    .eq("note_date", dateStr);
+
+  if (error) throw error;
+  return data;
+}
+
+export interface UpdateTaskInput {
+  id: string;
+  name: string;
+  description: string;
+  ownerId: string;
+  owner2Id?: string | null;
+  dueDate: string;
+  priority: PriorityLevel;
+  deco: DecoLevel;
+  labels: LabelCategory[];
+}
+
+export async function updateTask(input: UpdateTaskInput) {
+  const supabase = await createClient();
+
+  if (input.labels.length < 1 || input.labels.length > 2) {
+    throw new Error("A task must have 1 or 2 labels.");
+  }
+
+  const { data: updated, error } = await supabase
+    .from("tasks")
+    .update({
+      name: input.name,
+      description: input.description,
+      owner_id: input.ownerId,
+      owner2_id: input.owner2Id || null,
+      due_date: input.dueDate,
+      priority: input.priority,
+      deco: input.deco,
+      labels: input.labels,
+    })
+    .eq("id", input.id)
+    .select(`
+      *,
+      owner:profiles!tasks_owner_id_fkey(id, full_name),
+      owner2:profiles!tasks_owner2_id_fkey(id, full_name),
+      dependencies:task_dependencies(
+        id,
+        reason,
+        depends_on_user:profiles!task_dependencies_depends_on_user_id_fkey(id, full_name),
+        linked_task_id
+      )
+    `)
+    .single();
+
+  if (error) throw error;
+
+  revalidatePath("/", "layout");
+  return updated as Task;
 }

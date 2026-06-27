@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase-server";
-import { getLeaderboard } from "@/actions/tasks";
+import { getLeaderboardData } from "@/actions/tasks";
 import { redirect } from "next/navigation";
 import { LeaderboardTabs } from "./leaderboard-tabs";
 
@@ -7,20 +7,19 @@ export const dynamic = "force-dynamic";
 
 export default async function LeaderboardPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  
+  const [userResult, leaderboardData] = await Promise.all([
+    supabase.auth.getUser(),
+    getLeaderboardData()
+  ]);
+
+  const user = userResult.data.user;
 
   if (!user) {
     redirect("/login");
   }
 
-  // Fetch all leaderboard ranges in parallel
-  const [weekly, monthly, allTime] = await Promise.all([
-    getLeaderboard("weekly"),
-    getLeaderboard("monthly"),
-    getLeaderboard("all_time"),
-  ]);
+  const { weekly, monthly, allTime } = leaderboardData;
 
   return (
     <main className="h-screen w-full overflow-y-auto flex flex-col p-6 space-y-6" style={{ backgroundColor: "#1E1E1E" }}>

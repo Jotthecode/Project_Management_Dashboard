@@ -30,7 +30,7 @@ export default async function DailyTasksPage() {
         </div>
       </div>
 
-      <DailyPageClient initialTasks={dailyTasks} profiles={profiles} />
+      <DailyPageClient initialTasks={dailyTasks} profiles={profiles} currentUserId={user.id} />
     </main>
   );
 }

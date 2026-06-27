@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
       .map((p: any) => `- ${p.full_name} (ID: ${p.id}, Email: ${p.email})`)
       .join("\n");
 
-    const systemPrompt = `You are a SmartScore AI task assistant. Your job is to parse a natural language task description in English and extract structured task attributes.
+    const systemPrompt = `You are a SCC (SmartScore Command Center 📡) AI task assistant. Your job is to parse a natural language task description in English and extract structured task attributes.
 The current date (today) is: ${currentDate}.
 Available profiles in the system to assign tasks to:
 ${profilesList}

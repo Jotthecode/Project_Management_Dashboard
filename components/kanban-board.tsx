@@ -1,22 +1,28 @@
 // components/kanban-board.tsx
 "use client";
  
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { Task, TaskStatus, COLUMN_ORDER, type Profile, calculateScore } from "@/lib/types";
 import { KanbanColumn } from "@/components/kanban-column";
 import { TaskDetailSheet } from "@/components/task-detail-sheet";
 import { moveTask } from "@/actions/tasks";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
  
 interface KanbanBoardProps {
   initialTasks: Task[];
   profiles: Profile[];
+  currentUserId?: string;
 }
  
-export function KanbanBoard({ initialTasks, profiles }: KanbanBoardProps) {
+export function KanbanBoard({ initialTasks, profiles, currentUserId }: KanbanBoardProps) {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    setTasks(initialTasks);
+  }, [initialTasks]);
  
   const tasksByStatus = (status: TaskStatus) => tasks.filter((t) => t.status === status);
  
@@ -55,22 +61,33 @@ export function KanbanBoard({ initialTasks, profiles }: KanbanBoardProps) {
  
   return (
     <div className="h-full w-full" style={{ backgroundColor: "#1E1E1E" }}>
-      <div className="flex gap-3 overflow-x-auto h-full p-4">
-        {COLUMN_ORDER.map((status) => (
-          <KanbanColumn
-            key={status}
-            status={status}
-            tasks={tasksByStatus(status)}
-            profiles={profiles}
-            onTaskClick={setSelectedTask}
-            onDrop={handleDrop}
-          />
-        ))}
+      <div className="flex gap-4 overflow-x-auto h-full p-4">
+        {COLUMN_ORDER.map((status) => {
+          const isDaily = status === "oscar_delta";
+          return (
+            <div 
+              key={status} 
+              className={cn(
+                "flex h-full", 
+                isDaily && "pl-6 ml-3 border-l border-zinc-800/80"
+              )}
+            >
+              <KanbanColumn
+                status={status}
+                tasks={tasksByStatus(status)}
+                profiles={profiles}
+                onTaskClick={setSelectedTask}
+                onDrop={handleDrop}
+              />
+            </div>
+          );
+        })}
       </div>
  
       <TaskDetailSheet
         task={selectedTask}
         allTasks={tasks}
+        profiles={profiles}
         open={!!selectedTask}
         onOpenChange={(open) => !open && setSelectedTask(null)}
         onUpdated={(updated) =>
@@ -79,6 +96,7 @@ export function KanbanBoard({ initialTasks, profiles }: KanbanBoardProps) {
         onDeleted={(deletedId) =>
           setTasks((prev) => prev.filter((t) => t.id !== deletedId))
         }
+        currentUserId={currentUserId}
       />
     </div>
   );

@@ -17,7 +17,8 @@ export type LabelCategory =
   | "customer_delivery"
   | "ops"
   | "tech"
-  | "product";
+  | "product"
+  | "blocking_task";
 
 export interface Profile {
   id: string;
@@ -41,6 +42,7 @@ export interface Task {
   name: string;
   description: string;
   owner_id: string;
+  owner2_id?: string | null;
   due_date: string; // ISO date
   priority: PriorityLevel;
   deco: DecoLevel;
@@ -58,6 +60,7 @@ export interface Task {
 
   // joined relations (populated by queries)
   owner?: Profile;
+  owner2?: Profile;
   contributors?: Profile[];
   dependencies?: TaskDependency[];
 }
@@ -88,11 +91,11 @@ export const DECO_CONFIG: Record<
   DecoLevel,
   { label: string; duration: string; weight: number; color: string; maxDaysInProgress: number }
 > = {
-  high: { label: "High", duration: "More than 7 Days", weight: 0.5, color: "#EF4444", maxDaysInProgress: 10 },
-  medium_high: { label: "Medium High", duration: "5 to 7 Days", weight: 0.4, color: "#F97316", maxDaysInProgress: 7 },
+  high: { label: "Very High", duration: "More than 7 Days", weight: 0.5, color: "#EF4444", maxDaysInProgress: 10 },
+  medium_high: { label: "High", duration: "5 to 7 Days", weight: 0.4, color: "#F97316", maxDaysInProgress: 7 },
   medium: { label: "Medium", duration: "3 to 5 Days", weight: 0.3, color: "#EAB308", maxDaysInProgress: 5 },
-  medium_low: { label: "Medium Low", duration: "1 to 3 Days", weight: 0.2, color: "#86EFAC", maxDaysInProgress: 3 },
-  low: { label: "Low", duration: "Less than 1 Day", weight: 0.1, color: "#22C55E", maxDaysInProgress: 1 },
+  medium_low: { label: "Low", duration: "1 to 3 Days", weight: 0.2, color: "#86EFAC", maxDaysInProgress: 3 },
+  low: { label: "Very Low", duration: "Less than 1 Day", weight: 0.1, color: "#22C55E", maxDaysInProgress: 1 },
 };
 
 export const LABEL_CONFIG: Record<LabelCategory, { label: string }> = {
@@ -102,6 +105,7 @@ export const LABEL_CONFIG: Record<LabelCategory, { label: string }> = {
   ops: { label: "Ops" },
   tech: { label: "Tech" },
   product: { label: "Product" },
+  blocking_task: { label: "Blocking Task" },
 };
 
 export const COLUMN_ORDER: TaskStatus[] = [

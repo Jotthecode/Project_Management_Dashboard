@@ -65,6 +65,7 @@ export function CreateTaskSheet({ profiles, trigger, defaultStatus }: CreateTask
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [ownerId, setOwnerId] = useState<string>("");
+  const [owner2Id, setOwner2Id] = useState<string>("");
   const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
   const [priority, setPriority] = useState<PriorityLevel | "">("");
   const [deco, setDeco] = useState<DecoLevel | "">("");
@@ -77,6 +78,7 @@ export function CreateTaskSheet({ profiles, trigger, defaultStatus }: CreateTask
     setName("");
     setDescription("");
     setOwnerId("");
+    setOwner2Id("");
     setDueDate(undefined);
     setPriority("");
     setDeco("");
@@ -88,7 +90,7 @@ export function CreateTaskSheet({ profiles, trigger, defaultStatus }: CreateTask
 
   function addDependency() {
     if (!depUserId) return toast.error("Please select a user.");
-    if (!depReason.trim()) return toast.error("Please specify a reason.");
+    if (depReason.trim().length <= 10) return toast.error("Dependency reason must exceed 10 characters.");
     
     if (dependencies.some(d => d.dependsOnUserId === depUserId)) {
       return toast.error("A dependency on this user already exists.");
@@ -133,6 +135,7 @@ export function CreateTaskSheet({ profiles, trigger, defaultStatus }: CreateTask
           name: name.trim(),
           description: description.trim(),
           ownerId,
+          owner2Id: owner2Id && owner2Id !== "unassigned" ? owner2Id : undefined,
           dueDate: format(dueDate, "yyyy-MM-dd"),
           priority,
           deco,
@@ -208,21 +211,39 @@ export function CreateTaskSheet({ profiles, trigger, defaultStatus }: CreateTask
             />
           </div>
 
-          {/* Owner */}
-          <div className="space-y-1.5">
-            <Label className="text-zinc-300">Owner</Label>
-            <Select value={ownerId} onValueChange={setOwnerId}>
-              <SelectTrigger className="bg-[#2D2D2D] border-zinc-700 text-white">
-                <SelectValue placeholder="Select an owner" />
-              </SelectTrigger>
-              <SelectContent className="bg-[#2D2D2D] border-zinc-700 text-white">
-                {profiles.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.full_name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          {/* Owners (Up to 2) */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-zinc-300">Primary Owner</Label>
+              <Select value={ownerId} onValueChange={setOwnerId}>
+                <SelectTrigger className="bg-[#2D2D2D] border-zinc-700 text-white text-xs">
+                  <SelectValue placeholder="Primary Owner" />
+                </SelectTrigger>
+                <SelectContent className="bg-[#2D2D2D] border-zinc-700 text-white">
+                  {profiles.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.full_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-zinc-300">Secondary Owner</Label>
+              <Select value={owner2Id} onValueChange={setOwner2Id}>
+                <SelectTrigger className="bg-[#2D2D2D] border-zinc-700 text-white text-xs">
+                  <SelectValue placeholder="Optional" />
+                </SelectTrigger>
+                <SelectContent className="bg-[#2D2D2D] border-zinc-700 text-white">
+                  <SelectItem value="unassigned">None</SelectItem>
+                  {profiles.map((p) => (
+                    <SelectItem key={p.id} value={p.id} disabled={p.id === ownerId}>
+                      {p.full_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {/* Due Date */}
@@ -277,7 +298,15 @@ export function CreateTaskSheet({ profiles, trigger, defaultStatus }: CreateTask
 
           {/* DECO */}
           <div className="space-y-1.5">
-            <Label className="text-zinc-300">DECO (Duration & Complexity)</Label>
+            <div className="flex items-center gap-1.5">
+              <Label className="text-zinc-300">DECO (Duration & Complexity)</Label>
+              <span className="relative group inline-flex items-center cursor-pointer text-zinc-400 hover:text-white transition-colors">
+                <span className="text-[10px] bg-zinc-800 text-zinc-400 font-bold h-4 w-4 rounded-full flex items-center justify-center border border-zinc-700 hover:border-zinc-500">i</span>
+                <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 hidden group-hover:block bg-zinc-950 text-zinc-200 text-[10px] font-normal p-2 rounded-md shadow-lg border border-zinc-800 z-50 text-center leading-normal">
+                  DECO: Duration, Effort, COmplexity
+                </span>
+              </span>
+            </div>
             <Select value={deco} onValueChange={(v) => setDeco(v as DecoLevel)}>
               <SelectTrigger className="bg-[#2D2D2D] border-zinc-700 text-white">
                 <SelectValue placeholder="When will this be completed?" />
@@ -374,20 +403,24 @@ export function CreateTaskSheet({ profiles, trigger, defaultStatus }: CreateTask
               </div>
 
               <div className="space-y-1">
-                <Label className="text-zinc-400 text-xs">For what?</Label>
+                <Label className="text-zinc-400 text-xs">To do what?</Label>
                 <Input
                   value={depReason}
                   onChange={(e) => setDepReason(e.target.value)}
                   placeholder="e.g. Needs backend API design completed"
                   className="bg-[#2D2D2D] border-zinc-700 text-white text-xs h-9 placeholder:text-zinc-600"
                 />
+                {depReason && depReason.trim().length <= 10 && (
+                  <p className="text-[10px] text-red-400 mt-1">Reason must exceed 10 characters.</p>
+                )}
               </div>
 
               <Button
                 type="button"
                 onClick={addDependency}
+                disabled={depReason.trim().length <= 10}
                 variant="outline"
-                className="w-full text-xs h-8 border-zinc-650 hover:bg-zinc-800 text-zinc-300 hover:text-white"
+                className="w-full text-xs h-8 border-zinc-650 hover:bg-zinc-800 text-zinc-300 hover:text-white disabled:opacity-50 disabled:pointer-events-none"
               >
                 Add Dependency
               </Button>

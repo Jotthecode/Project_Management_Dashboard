@@ -65,17 +65,17 @@ export function Sidebar({ profile }: SidebarProps) {
       <div className="flex items-center justify-between h-14 px-4 border-b border-zinc-800">
         {!isCollapsed && (
           <div className="flex items-center gap-2">
-            <div className="flex items-center justify-center h-7 w-7 rounded bg-blue-600">
-              <span className="text-white font-black text-sm">S</span>
+            <div className="flex items-center justify-center h-7 px-1.5 rounded bg-blue-600">
+              <span className="text-white font-black text-xs tracking-wider">SCC</span>
             </div>
-            <span className="text-white font-bold text-base tracking-tight">
-              SmartScore
+            <span className="text-white font-bold text-sm tracking-tight truncate max-w-[130px]" title="SmartScore Command Center 📡">
+              Command Center 📡
             </span>
           </div>
         )}
         {isCollapsed && (
           <div className="mx-auto flex items-center justify-center h-7 w-7 rounded bg-blue-600">
-            <span className="text-white font-black text-sm">S</span>
+            <span className="text-white font-black text-[9px]">SCC</span>
           </div>
         )}
         {!isCollapsed && (

@@ -31,9 +31,10 @@ import {
   type PriorityLevel,
   type DecoLevel,
   type LabelCategory,
+  type ComplexityLevel,
   type Profile,
 } from "@/lib/types";
-import { setBlocked, resolveDependency, deleteTask, updateTask } from "@/actions/tasks";
+import { setBlocked, resolveDependency, deleteTask, updateTask, saveTaskNote, getTaskNotes } from "@/actions/tasks";
 import { Link2, Trophy, AlertTriangle, Users, Trash2, Edit, Save, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -71,10 +72,18 @@ export function TaskDetailSheet({
   const [editDesc, setEditDesc] = useState("");
   const [editOwnerId, setEditOwnerId] = useState("");
   const [editOwner2Id, setEditOwner2Id] = useState("");
-  const [editDueDate, setEditDueDate] = useState<Date | undefined>(undefined);
+  const [editWingmenIds, setEditWingmenIds] = useState<string[]>([]);
+  const [selectedWingmanToAdd, setSelectedWingmanToAdd] = useState("");
+  const [editDueDate, setEditDueDate] = useState("");
   const [editPriority, setEditPriority] = useState<PriorityLevel | "">("");
-  const [editDeco, setEditDeco] = useState<DecoLevel | "">("");
+  const [editDeco, setEditDeco] = useState<DecoLevel | "">("medium");
+  const [editComplexity, setEditComplexity] = useState<ComplexityLevel | "">("medium");
   const [editLabels, setEditLabels] = useState<LabelCategory[]>([]);
+
+  // Notes state
+  const [notes, setNotes] = useState<any[]>([]);
+  const [newNote, setNewNote] = useState("");
+  const [notesLimit, setNotesLimit] = useState(3);
 
   useEffect(() => {
     if (task) {
@@ -86,15 +95,22 @@ export function TaskDetailSheet({
       setEditDesc(task.description || "");
       setEditOwnerId(task.owner_id);
       setEditOwner2Id(task.owner2_id || "");
-      setEditDueDate(task.due_date ? new Date(task.due_date) : undefined);
+      setEditWingmenIds(task.wingmen_ids || []);
+      setSelectedWingmanToAdd("");
+      setEditDueDate(task.due_date ? new Date(task.due_date).toISOString().split("T")[0] : "");
       setEditPriority(task.priority);
       setEditDeco(task.deco);
+      setEditComplexity(task.complexity || "medium");
       setEditLabels(task.labels || []);
       setIsEditing(false);
+
+      // Fetch notes
+      getTaskNotes(task.id).then(setNotes).catch(console.error);
     } else {
       setReasonDraft("");
       setShowBlockedInput(false);
       setIsEditing(false);
+      setNotes([]);
     }
   }, [task]);
 
@@ -161,11 +177,12 @@ export function TaskDetailSheet({
 
   const priority = PRIORITY_CONFIG[task.priority];
   const deco = DECO_CONFIG[task.deco];
+  const complexity = DECO_CONFIG[task.complexity || "medium"];
 
   // Projected score if completed today (for in-progress visibility)
   const projectedScore =
     task.status !== "tango_charlie"
-      ? calculateScore(task.priority, task.deco, task.due_date, new Date().toISOString().split("T")[0])
+      ? calculateScore(task.priority, task.deco, task.complexity || "medium", task.due_date, new Date().toISOString().split("T")[0])
       : task.score;
 
   const due = new Date(task.due_date);
@@ -210,6 +227,32 @@ export function TaskDetailSheet({
     });
   }
 
+  function handleAddWingman() {
+    if (!selectedWingmanToAdd) return;
+    if (editWingmenIds.includes(selectedWingmanToAdd)) return;
+    setEditWingmenIds((prev) => [...prev, selectedWingmanToAdd]);
+    setSelectedWingmanToAdd("");
+  }
+
+  function handleRemoveWingman(id: string) {
+    setEditWingmenIds((prev) => prev.filter((wId) => wId !== id));
+  }
+
+  async function handleAddNote() {
+    if (!newNote.trim() || newNote.trim().length <= 10) {
+      toast.error("Note must exceed 10 characters.");
+      return;
+    }
+    try {
+      const added = await saveTaskNote(taskId, newNote);
+      setNotes((prev) => [added, ...prev]);
+      setNewNote("");
+      toast.success("Note added successfully.");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to add note.");
+    }
+  }
+
   function handleSaveEdit() {
     if (!editName.trim()) return toast.error("Task name is required.");
     if (!editOwnerId) return toast.error("Please select a primary owner.");
@@ -224,9 +267,11 @@ export function TaskDetailSheet({
           description: editDesc.trim(),
           ownerId: editOwnerId,
           owner2Id: editOwner2Id && editOwner2Id !== "unassigned" ? editOwner2Id : null,
-          dueDate: editDueDate.toISOString().split("T")[0],
+          wingmenIds: editWingmenIds,
+          dueDate: editDueDate,
           priority: editPriority as PriorityLevel,
           deco: editDeco as DecoLevel,
+          complexity: editComplexity as ComplexityLevel,
           labels: editLabels,
         });
 
@@ -243,10 +288,6 @@ export function TaskDetailSheet({
   function toggleLabel(label: LabelCategory) {
     setEditLabels((prev) => {
       if (prev.includes(label)) return prev.filter((l) => l !== label);
-      if (prev.length >= 2) {
-        toast.warning("A task can have at most 2 labels.");
-        return prev;
-      }
       return [...prev, label];
     });
   }
@@ -285,7 +326,7 @@ export function TaskDetailSheet({
         <div className="mt-4 space-y-5 text-sm">
           {isEditing ? (
             <div className="space-y-4">
-              {/* Owners (Up to 2) */}
+              {/* Owners (Primary & Secondary) */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label className="text-zinc-300 text-xs">Primary Owner</Label>
@@ -320,19 +361,80 @@ export function TaskDetailSheet({
                 </div>
               </div>
 
-              {/* Due Date */}
+              {/* Wingmen Selection */}
+              <div className="space-y-2">
+                <Label className="text-zinc-300 text-xs">Wingmen (Additional Owners)</Label>
+                <div className="flex gap-2">
+                  <Select
+                    value={selectedWingmanToAdd}
+                    onValueChange={setSelectedWingmanToAdd}
+                  >
+                    <SelectTrigger className="bg-[#2D2D2D] border-zinc-700 text-white text-xs flex-1">
+                      <SelectValue placeholder="Add wingman..." />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#2D2D2D] border-zinc-700 text-white">
+                      {profiles
+                        .filter(
+                          (p) =>
+                            p.id !== editOwnerId &&
+                            p.id !== editOwner2Id &&
+                            !editWingmenIds.includes(p.id)
+                        )
+                        .map((p) => (
+                          <SelectItem key={p.id} value={p.id}>
+                            {p.full_name}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    type="button"
+                    onClick={handleAddWingman}
+                    className="bg-zinc-800 hover:bg-zinc-750 text-white text-xs border border-zinc-700 px-3 shrink-0 h-9"
+                  >
+                    Add
+                  </Button>
+                </div>
+                {editWingmenIds.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {editWingmenIds.map((wId) => {
+                      const profile = profiles.find((p) => p.id === wId);
+                      return (
+                        <Badge
+                          key={wId}
+                          variant="secondary"
+                          className="bg-zinc-800 border border-zinc-700 text-zinc-300 text-[10px] pl-2 pr-1 py-0.5 flex items-center gap-1"
+                        >
+                          <span>{profile?.full_name}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveWingman(wId)}
+                            className="text-zinc-500 hover:text-white rounded-full p-0.5"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Due Date Edit */}
               <div className="space-y-1.5">
-                <Label className="text-zinc-300 text-xs">Due Date</Label>
+                <Label className="text-zinc-400 text-xs font-semibold">Due Date</Label>
                 <input
                   type="date"
-                  value={editDueDate ? editDueDate.toISOString().split("T")[0] : ""}
-                  onChange={(e) => setEditDueDate(e.target.value ? new Date(e.target.value) : undefined)}
-                  className="w-full bg-[#2D2D2D] border border-zinc-700 rounded p-2 text-xs text-white focus:outline-none"
+                  value={editDueDate}
+                  onChange={(e) => setEditDueDate(e.target.value)}
+                  className="w-full bg-[#2D2D2D] border border-zinc-700 text-white rounded px-2.5 py-1.5 text-xs focus:outline-none"
                 />
               </div>
 
-              {/* Priority & DECO */}
-              <div className="grid grid-cols-2 gap-3">
+
+
+              {/* Priority & Deco (Duration) & Complexity Dropdowns */}
+              <div className="grid grid-cols-3 gap-2">
                 <div className="space-y-1.5">
                   <Label className="text-zinc-300 text-xs">Priority</Label>
                   <Select value={editPriority} onValueChange={(v) => setEditPriority(v as PriorityLevel)}>
@@ -349,15 +451,30 @@ export function TaskDetailSheet({
                   </Select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-zinc-300 text-xs font-semibold">Complexity (DECO)</Label>
+                  <Label className="text-zinc-300 text-xs">Duration</Label>
                   <Select value={editDeco} onValueChange={(v) => setEditDeco(v as DecoLevel)}>
                     <SelectTrigger className="bg-[#2D2D2D] border-zinc-700 text-white text-xs mt-1">
-                      <SelectValue placeholder="DECO Level" />
+                      <SelectValue placeholder="Duration" />
                     </SelectTrigger>
                     <SelectContent className="bg-[#2D2D2D] border-zinc-700 text-white">
-                      {(Object.keys(DECO_CONFIG) as DecoLevel[]).map((dKey) => (
+                      {Object.keys(DECO_CONFIG).map((dKey) => (
                         <SelectItem key={dKey} value={dKey}>
-                          {DECO_CONFIG[dKey].label}
+                          {DECO_CONFIG[dKey as DecoLevel].label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-zinc-300 text-xs">Complexity</Label>
+                  <Select value={editComplexity} onValueChange={(v) => setEditComplexity(v as ComplexityLevel)}>
+                    <SelectTrigger className="bg-[#2D2D2D] border-zinc-700 text-white text-xs mt-1">
+                      <SelectValue placeholder="Complexity" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#2D2D2D] border-zinc-700 text-white">
+                      {Object.keys(DECO_CONFIG).map((dKey) => (
+                        <SelectItem key={dKey} value={dKey}>
+                          {DECO_CONFIG[dKey as DecoLevel].label}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -365,13 +482,12 @@ export function TaskDetailSheet({
                 </div>
               </div>
 
-              {/* Labels (choose 1-2) */}
+              {/* Labels */}
               <div className="space-y-1.5">
-                <Label className="text-zinc-300 text-xs">Labels (choose 1-2)</Label>
+                <Label className="text-zinc-300 text-xs">Labels</Label>
                 <div className="flex flex-wrap gap-1.5">
                   {(Object.keys(LABEL_CONFIG) as LabelCategory[]).map((label) => {
                     const selected = editLabels.includes(label);
-                    if (label === "blocking_task") return null;
                     return (
                       <Badge
                         key={label}
@@ -393,13 +509,17 @@ export function TaskDetailSheet({
             </div>
           ) : (
             <>
-              {/* Owners & due date */}
+              {/* Owners & Wingmen & due date */}
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
                   <Field label="Primary Owner" value={task.owner?.full_name ?? "Unassigned"} />
                   <Field label="Secondary Owner" value={task.owner2?.full_name ?? "None"} />
                 </div>
-                <div className="grid grid-cols-1">
+                <div className="grid grid-cols-2 gap-3">
+                  <Field
+                    label="Wingmen"
+                    value={task.wingmen?.map((w) => w.full_name).join(", ") || "None"}
+                  />
                   <Field
                     label="Due Date"
                     value={new Date(task.due_date).toLocaleDateString("en-US", {
@@ -413,33 +533,32 @@ export function TaskDetailSheet({
             </>
           )}
 
-          {/* Priority & DECO */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-lg p-3" style={{ backgroundColor: "#2D2D2D" }}>
-              <p className="text-xs text-zinc-400 mb-1">Priority</p>
-              <div className="flex items-center gap-2">
-                <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: priority.color }} />
-                <span>{task.priority} · {priority.label}</span>
+          {/* Priority & Duration & Complexity read-only */}
+          {!isEditing && (
+            <div className="grid grid-cols-3 gap-2">
+              <div className="rounded-lg p-3" style={{ backgroundColor: "#2D2D2D" }}>
+                <p className="text-xs text-zinc-400 mb-1">Priority</p>
+                <div className="flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: priority.color }} />
+                  <span className="text-xs">{task.priority}</span>
+                </div>
               </div>
-              <p className="text-[11px] text-zinc-500 mt-1">Weight {priority.weight}</p>
+              <div className="rounded-lg p-3" style={{ backgroundColor: "#2D2D2D" }}>
+                <p className="text-xs text-zinc-400 mb-1">Duration</p>
+                <div className="flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: deco.color }} />
+                  <span className="text-xs">{deco.label}</span>
+                </div>
+              </div>
+              <div className="rounded-lg p-3" style={{ backgroundColor: "#2D2D2D" }}>
+                <p className="text-xs text-zinc-400 mb-1">Complexity</p>
+                <div className="flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: complexity.color }} />
+                  <span className="text-xs">{complexity.label}</span>
+                </div>
+              </div>
             </div>
-            <div className="rounded-lg p-3" style={{ backgroundColor: "#2D2D2D" }}>
-              <div className="flex items-center justify-between mb-1">
-                <p className="text-xs text-zinc-400">DECO</p>
-                <span className="relative group inline-flex items-center cursor-pointer text-zinc-400 hover:text-white transition-colors">
-                  <span className="text-[10px] bg-zinc-800 text-zinc-450 font-bold h-3.5 w-3.5 rounded-full flex items-center justify-center border border-zinc-700">i</span>
-                  <span className="absolute bottom-full right-0 mb-2 w-48 hidden group-hover:block bg-zinc-950 text-zinc-200 text-[10px] font-normal p-2 rounded-md shadow-lg border border-zinc-800 z-50 text-center leading-normal">
-                    DECO: Duration, Effort, COmplexity
-                  </span>
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: deco.color }} />
-                <span>{deco.label}</span>
-              </div>
-              <p className="text-[11px] text-zinc-500 mt-1">{deco.duration} · Weight {deco.weight}</p>
-            </div>
-          </div>
+          )}
 
           {/* Labels */}
           {task.labels?.length > 0 && (
@@ -487,7 +606,7 @@ export function TaskDetailSheet({
           {parentTask && (
             <div className="rounded-lg p-3 border border-purple-500/30 bg-purple-500/5 text-sm">
               <p className="text-xs text-purple-400 mb-1.5">Linked Dependency Task</p>
-              <p>Requested By: <span className="font-medium">{parentTask.owner?.full_name}</span></p>
+              <p>Requested By: <span className="font-medium">{task.requested_by_user?.full_name || parentTask.owner?.full_name || "Unknown"}</span></p>
               <p>Parent Task: <span className="font-medium">{parentTask.name}</span></p>
               {task.dependency_reason && (
                 <p className="text-zinc-400 mt-1">Reason: {task.dependency_reason}</p>
@@ -653,6 +772,53 @@ export function TaskDetailSheet({
               </div>
             )}
           </div>
+
+          {/* Multi-note section */}
+          {!isEditing && (
+            <div className="space-y-3.5 pt-4 border-t border-zinc-800">
+              <Label className="text-zinc-300 text-xs font-semibold">Task Notes ({notes.length})</Label>
+              
+              {/* Add Note Input */}
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Add a new note (min 11 chars)..."
+                  value={newNote}
+                  onChange={(e) => setNewNote(e.target.value)}
+                  className="bg-[#2D2D2D] border-zinc-700 text-white text-xs h-9"
+                />
+                <Button
+                  onClick={handleAddNote}
+                  disabled={newNote.trim().length <= 10}
+                  className="bg-blue-600 hover:bg-blue-700 text-white text-xs shrink-0 px-4 h-9"
+                >
+                  Post
+                </Button>
+              </div>
+
+              {/* Notes List */}
+              <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
+                {notes.slice(0, notesLimit).map((note) => (
+                  <div key={note.id} className="rounded bg-zinc-900/40 p-2.5 border border-zinc-800 text-[11px] space-y-1">
+                    <div className="flex justify-between text-zinc-400 font-semibold">
+                      <span>{note.author?.full_name || "Unknown Author"}</span>
+                      <span>{new Date(note.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
+                    </div>
+                    <p className="text-zinc-300 whitespace-pre-wrap leading-relaxed font-normal">{note.content}</p>
+                  </div>
+                ))}
+                
+                {notes.length > notesLimit && (
+                  <Button
+                    variant="ghost"
+                    onClick={() => setNotesLimit((prev) => prev + 5)}
+                    className="w-full text-xs text-zinc-400 hover:text-white pt-1 h-8 font-semibold bg-zinc-900/10 hover:bg-zinc-900/30 border border-zinc-800/45 mt-1"
+                  >
+                    Load More Notes ({notes.length - notesLimit} remaining)
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </SheetContent>
     </Sheet>

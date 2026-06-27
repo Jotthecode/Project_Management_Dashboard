@@ -9,6 +9,7 @@ import {
   type PriorityLevel,
   type DecoLevel,
   type LabelCategory,
+  type ComplexityLevel,
 } from "@/lib/types";
 import { revalidatePath } from "next/cache";
 import { sendEmail } from "@/lib/email";
@@ -22,9 +23,11 @@ export interface CreateTaskInput {
   description: string;
   ownerId: string;
   owner2Id?: string;
+  wingmenIds?: string[];
   dueDate: string; // ISO date
   priority: PriorityLevel;
-  deco: DecoLevel;
+  deco: DecoLevel; // Duration
+  complexity: ComplexityLevel; // Complexity
   labels: LabelCategory[];
   status?: TaskStatus;
   contributorIds?: string[];
@@ -34,10 +37,6 @@ export interface CreateTaskInput {
 export async function createTask(input: CreateTaskInput) {
   const supabase = await createClient();
 
-  if (input.labels.length < 1 || input.labels.length > 2) {
-    throw new Error("A task must have 1 or 2 labels.");
-  }
-
   const { data: task, error } = await supabase
     .from("tasks")
     .insert({
@@ -45,10 +44,12 @@ export async function createTask(input: CreateTaskInput) {
       description: input.description,
       owner_id: input.ownerId,
       owner2_id: input.owner2Id || null,
+      wingmen_ids: input.wingmenIds || [],
       due_date: input.dueDate,
       priority: input.priority,
       deco: input.deco,
-      labels: input.labels,
+      complexity: input.complexity || "medium",
+      labels: input.labels || [],
       status: input.status ?? "sierra_bravo",
     })
     .select()
@@ -105,7 +106,7 @@ export async function createDependency(
     .single();
   if (parentErr) throw parentErr;
 
-  // Create B's linked task — same Due Date, Priority, DECO as parent.
+  // Create B's linked task — same Due Date, Priority, DECO/Complexity as parent.
   const { data: linkedTask, error: linkedErr } = await supabase
     .from("tasks")
     .insert({
@@ -115,7 +116,8 @@ export async function createDependency(
       due_date: parentTask.due_date,
       priority: parentTask.priority,
       deco: parentTask.deco,
-      labels: ["blocking_task"],
+      complexity: parentTask.complexity || "medium",
+      labels: [],
       status: "sierra_bravo",
       parent_task_id: parentTask.id,
       requested_by: parentTask.owner_id,
@@ -271,7 +273,7 @@ export async function moveTask(taskId: string, newStatus: TaskStatus) {
   // Pre-compute score for immediate response; DB trigger also enforces this.
   if (newStatus === "tango_charlie" && task.status !== "tango_charlie") {
     const today = new Date().toISOString().split("T")[0];
-    update.score = calculateScore(task.priority, task.deco, task.due_date, today);
+    update.score = calculateScore(task.priority, task.deco, task.complexity, task.due_date, today);
     update.completed_at = new Date().toISOString();
   }
 
@@ -323,6 +325,7 @@ export async function getBoardTasks() {
       *,
       owner:profiles!tasks_owner_id_fkey(id, full_name, email, avatar_url),
       owner2:profiles!tasks_owner2_id_fkey(id, full_name, email, avatar_url),
+      requested_by_user:profiles!tasks_requested_by_fkey(id, full_name, email, avatar_url),
       dependencies:task_dependencies!task_dependencies_task_id_fkey(
         id, reason, linked_task_id,
         depends_on_user:profiles!task_dependencies_depends_on_user_id_fkey(id, full_name)
@@ -336,10 +339,18 @@ export async function getBoardTasks() {
 
   if (error) throw error;
 
-  // Flatten contributors join shape
+  // Fetch profiles to resolve wingmen in memory
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("id, full_name, email, avatar_url");
+
+  // Flatten contributors join shape and resolve wingmen
   return (data ?? []).map((t: any) => ({
     ...t,
     contributors: (t.contributors ?? []).map((c: any) => c.profile),
+    wingmen: (t.wingmen_ids || [])
+      .map((id: string) => profiles?.find((p) => p.id === id))
+      .filter(Boolean),
   })) as Task[];
 }
 
@@ -369,6 +380,7 @@ export async function getLeaderboardData() {
       score,
       priority,
       deco,
+      complexity,
       completed_at,
       due_date,
       owner_id,
@@ -423,6 +435,7 @@ export async function getLeaderboardData() {
         task_name: row.name,
         priority: row.priority || "P3",
         deco: row.deco || "medium",
+        complexity: row.complexity || "medium",
         score: scoreVal,
         completed_at: row.completed_at,
         due_date: row.due_date,
@@ -487,10 +500,16 @@ export async function getDailyTasks() {
       *,
       owner:profiles!tasks_owner_id_fkey(id, full_name, email, avatar_url),
       owner2:profiles!tasks_owner2_id_fkey(id, full_name, email, avatar_url),
+      requested_by_user:profiles!tasks_requested_by_fkey(id, full_name, email, avatar_url),
       daily_completions(id, completed_at, completed_by)
     `)
     .eq("status", "oscar_delta")
     .order("created_at", { ascending: false });
+
+  // Fetch profiles to resolve wingmen in memory
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("id, full_name, email, avatar_url");
 
   if (error) {
     console.error("Error fetching daily tasks with completions. Running fallback query. Error detail:", error.message);
@@ -507,9 +526,21 @@ export async function getDailyTasks() {
       .order("created_at", { ascending: false });
 
     if (fallbackError) throw fallbackError;
-    return (fallbackData ?? []).map((t) => ({ ...t, daily_completions: [] })) as any[];
+    return (fallbackData ?? []).map((t: any) => ({
+      ...t,
+      daily_completions: [],
+      wingmen: (t.wingmen_ids || [])
+        .map((id: string) => profiles?.find((p) => p.id === id))
+        .filter(Boolean),
+    })) as any[];
   }
-  return data as any[];
+
+  return (data ?? []).map((t: any) => ({
+    ...t,
+    wingmen: (t.wingmen_ids || [])
+      .map((id: string) => profiles?.find((p) => p.id === id))
+      .filter(Boolean),
+  })) as any[];
 }
 
 export async function markDailyDone(taskId: string) {
@@ -615,18 +646,16 @@ export interface UpdateTaskInput {
   description: string;
   ownerId: string;
   owner2Id?: string | null;
+  wingmenIds?: string[];
   dueDate: string;
   priority: PriorityLevel;
   deco: DecoLevel;
+  complexity: ComplexityLevel;
   labels: LabelCategory[];
 }
 
 export async function updateTask(input: UpdateTaskInput) {
   const supabase = await createClient();
-
-  if (input.labels.length < 1 || input.labels.length > 2) {
-    throw new Error("A task must have 1 or 2 labels.");
-  }
 
   const { data: updated, error } = await supabase
     .from("tasks")
@@ -635,9 +664,11 @@ export async function updateTask(input: UpdateTaskInput) {
       description: input.description,
       owner_id: input.ownerId,
       owner2_id: input.owner2Id || null,
+      wingmen_ids: input.wingmenIds || [],
       due_date: input.dueDate,
       priority: input.priority,
       deco: input.deco,
+      complexity: input.complexity,
       labels: input.labels,
     })
     .eq("id", input.id)
@@ -645,6 +676,7 @@ export async function updateTask(input: UpdateTaskInput) {
       *,
       owner:profiles!tasks_owner_id_fkey(id, full_name),
       owner2:profiles!tasks_owner2_id_fkey(id, full_name),
+      requested_by_user:profiles!tasks_requested_by_fkey(id, full_name),
       dependencies:task_dependencies(
         id,
         reason,
@@ -656,6 +688,58 @@ export async function updateTask(input: UpdateTaskInput) {
 
   if (error) throw error;
 
+  // Resolve wingmen profiles in memory
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("id, full_name, email, avatar_url");
+
+  const updatedWithWingmen = {
+    ...updated,
+    wingmen: (updated.wingmen_ids || [])
+      .map((id: string) => profiles?.find((p) => p.id === id))
+      .filter(Boolean),
+  };
+
   revalidatePath("/", "layout");
-  return updated as Task;
+  return updatedWithWingmen as Task;
+}
+
+export async function saveTaskNote(taskId: string, content: string) {
+  if (content.trim().length <= 10) {
+    throw new Error("Note content must exceed 10 characters.");
+  }
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+
+  const { data, error } = await supabase
+    .from("task_notes")
+    .insert({
+      task_id: taskId,
+      author_id: user.id,
+      content: content.trim(),
+    })
+    .select(`
+      *,
+      author:profiles(id, full_name, avatar_url)
+    `)
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function getTaskNotes(taskId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("task_notes")
+    .select(`
+      *,
+      author:profiles(id, full_name, avatar_url)
+    `)
+    .eq("task_id", taskId)
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+  return data;
 }

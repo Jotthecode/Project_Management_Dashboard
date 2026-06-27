@@ -78,10 +78,6 @@ export function DailyPageClient({ initialTasks, profiles, currentUserId }: Daily
       if (prev.includes(label)) {
         return prev.filter((l) => l !== label);
       }
-      if (prev.length >= 2) {
-        toast.warning("A task can have at most 2 labels.");
-        return prev;
-      }
       return [...prev, label];
     });
   }
@@ -168,9 +164,11 @@ export function DailyPageClient({ initialTasks, profiles, currentUserId }: Daily
           name: name.trim(),
           description: description.trim(),
           ownerId,
+          wingmenIds: [],
           dueDate: todayStr,
           priority: "P3",
           deco: "medium",
+          complexity: "medium",
           labels,
           status: "oscar_delta",
         });
@@ -446,7 +444,6 @@ export function DailyPageClient({ initialTasks, profiles, currentUserId }: Daily
                 <div className="flex flex-wrap gap-1.5">
                   {ALL_LABELS.map((label) => {
                     const selected = labels.includes(label);
-                    if (label === "blocking_task") return null; // do not manually assign this special label
                     return (
                       <Badge
                         key={label}

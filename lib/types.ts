@@ -17,8 +17,9 @@ export type LabelCategory =
   | "customer_delivery"
   | "ops"
   | "tech"
-  | "product"
-  | "blocking_task";
+  | "product";
+
+export type ComplexityLevel = "high" | "medium_high" | "medium" | "medium_low" | "low";
 
 export interface Profile {
   id: string;
@@ -43,9 +44,11 @@ export interface Task {
   description: string;
   owner_id: string;
   owner2_id?: string | null;
+  wingmen_ids?: string[];
   due_date: string; // ISO date
   priority: PriorityLevel;
-  deco: DecoLevel;
+  deco: DecoLevel; // Duration
+  complexity: ComplexityLevel; // Complexity
   status: TaskStatus;
   labels: LabelCategory[];
   is_blocked: boolean;
@@ -61,8 +64,10 @@ export interface Task {
   // joined relations (populated by queries)
   owner?: Profile;
   owner2?: Profile;
+  wingmen?: Profile[];
   contributors?: Profile[];
   dependencies?: TaskDependency[];
+  requested_by_user?: Profile;
 }
 
 export const STATUS_CONFIG: Record<
@@ -105,7 +110,6 @@ export const LABEL_CONFIG: Record<LabelCategory, { label: string }> = {
   ops: { label: "Ops" },
   tech: { label: "Tech" },
   product: { label: "Product" },
-  blocking_task: { label: "Blocking Task" },
 };
 
 export const COLUMN_ORDER: TaskStatus[] = [
@@ -124,11 +128,13 @@ export const COLUMN_ORDER: TaskStatus[] = [
 export function calculateScore(
   priority: PriorityLevel,
   deco: DecoLevel,
+  complexity: ComplexityLevel,
   dueDate: string,
   completedDate: string
 ): number {
   const priorityWeight = PRIORITY_CONFIG[priority].weight;
-  const decoWeight = DECO_CONFIG[deco].weight;
+  const durationWeight = DECO_CONFIG[deco].weight;
+  const complexityWeight = DECO_CONFIG[complexity].weight;
 
   const due = new Date(dueDate);
   const completed = new Date(completedDate);
@@ -141,5 +147,5 @@ export function calculateScore(
   else if (daysEarly === 0) bonus = 1;
   else bonus = 0;
 
-  return Math.round(priorityWeight * decoWeight * 100 * bonus * 100) / 100;
+  return Math.round(priorityWeight * durationWeight * complexityWeight * 100 * bonus * 100) / 100;
 }

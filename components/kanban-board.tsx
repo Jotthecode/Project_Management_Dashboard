@@ -37,7 +37,7 @@ export function KanbanBoard({ initialTasks, profiles, currentUserId }: KanbanBoa
  
     if (newStatus === "tango_charlie" && task.status !== "tango_charlie") {
       const today = new Date().toISOString().split("T")[0];
-      const score = calculateScore(task.priority, task.deco, task.due_date, today);
+      const score = calculateScore(task.priority, task.deco, task.complexity || "medium", task.due_date, today);
       toast.success("Task completed! 🎉", {
         description: `You earned ${score} points for "${task.name}"`,
       });

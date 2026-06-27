@@ -137,9 +137,11 @@ export function AITaskAgent({ profiles }: AITaskAgentProps) {
           name: name.trim(),
           description: description.trim(),
           ownerId,
+          wingmenIds: [],
           dueDate,
           priority,
           deco,
+          complexity: deco,
           labels,
           status: "sierra_bravo",
         });

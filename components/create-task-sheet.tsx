@@ -4,7 +4,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
-import { CalendarIcon, Plus } from "lucide-react";
+import { CalendarIcon, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -37,6 +37,7 @@ import {
   type Profile,
   type PriorityLevel,
   type DecoLevel,
+  type ComplexityLevel,
   type LabelCategory,
   type TaskStatus,
   PRIORITY_CONFIG,
@@ -66,9 +67,12 @@ export function CreateTaskSheet({ profiles, trigger, defaultStatus }: CreateTask
   const [description, setDescription] = useState("");
   const [ownerId, setOwnerId] = useState<string>("");
   const [owner2Id, setOwner2Id] = useState<string>("");
+  const [wingmenIds, setWingmenIds] = useState<string[]>([]);
+  const [selectedWingmanToAdd, setSelectedWingmanToAdd] = useState("");
   const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
   const [priority, setPriority] = useState<PriorityLevel | "">("");
-  const [deco, setDeco] = useState<DecoLevel | "">("");
+  const [deco, setDeco] = useState<DecoLevel | "">("medium"); // Duration
+  const [complexity, setComplexity] = useState<ComplexityLevel | "">("medium"); // Complexity
   const [labels, setLabels] = useState<LabelCategory[]>([]);
   const [dependencies, setDependencies] = useState<{ dependsOnUserId: string; reason: string }[]>([]);
   const [depUserId, setDepUserId] = useState("");
@@ -79,13 +83,27 @@ export function CreateTaskSheet({ profiles, trigger, defaultStatus }: CreateTask
     setDescription("");
     setOwnerId("");
     setOwner2Id("");
+    setWingmenIds([]);
+    setSelectedWingmanToAdd("");
     setDueDate(undefined);
     setPriority("");
-    setDeco("");
+    setDeco("medium");
+    setComplexity("medium");
     setLabels([]);
     setDependencies([]);
     setDepUserId("");
     setDepReason("");
+  }
+
+  function handleAddWingman() {
+    if (!selectedWingmanToAdd) return;
+    if (wingmenIds.includes(selectedWingmanToAdd)) return;
+    setWingmenIds(prev => [...prev, selectedWingmanToAdd]);
+    setSelectedWingmanToAdd("");
+  }
+
+  function handleRemoveWingman(id: string) {
+    setWingmenIds(prev => prev.filter(wId => wId !== id));
   }
 
   function addDependency() {
@@ -110,10 +128,6 @@ export function CreateTaskSheet({ profiles, trigger, defaultStatus }: CreateTask
       if (prev.includes(label)) {
         return prev.filter((l) => l !== label);
       }
-      if (prev.length >= 2) {
-        toast.warning("A task can have at most 2 labels.");
-        return prev;
-      }
       return [...prev, label];
     });
   }
@@ -136,9 +150,11 @@ export function CreateTaskSheet({ profiles, trigger, defaultStatus }: CreateTask
           description: description.trim(),
           ownerId,
           owner2Id: owner2Id && owner2Id !== "unassigned" ? owner2Id : undefined,
+          wingmenIds,
           dueDate: format(dueDate, "yyyy-MM-dd"),
           priority,
-          deco,
+          deco: deco || "medium",
+          complexity: complexity || "medium",
           labels,
           status: targetStatus,
           dependencies,
@@ -246,6 +262,65 @@ export function CreateTaskSheet({ profiles, trigger, defaultStatus }: CreateTask
             </div>
           </div>
 
+          {/* Wingmen (Collaborators) */}
+          <div className="space-y-2">
+            <Label className="text-zinc-300 text-xs">Wingmen (Additional Owners)</Label>
+            <div className="flex gap-2">
+              <Select
+                value={selectedWingmanToAdd}
+                onValueChange={setSelectedWingmanToAdd}
+              >
+                <SelectTrigger className="bg-[#2D2D2D] border-zinc-700 text-white text-xs flex-1">
+                  <SelectValue placeholder="Add wingman..." />
+                </SelectTrigger>
+                <SelectContent className="bg-[#2D2D2D] border-zinc-700 text-white">
+                  {profiles
+                    .filter(
+                      (p) =>
+                        p.id !== ownerId &&
+                        p.id !== owner2Id &&
+                        !wingmenIds.includes(p.id)
+                    )
+                    .map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.full_name}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+              <Button
+                type="button"
+                onClick={handleAddWingman}
+                className="bg-zinc-800 hover:bg-zinc-750 text-white text-xs border border-zinc-700 px-3 shrink-0 h-9"
+              >
+                Add
+              </Button>
+            </div>
+            {wingmenIds.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {wingmenIds.map((wId) => {
+                  const profile = profiles.find((p) => p.id === wId);
+                  return (
+                    <Badge
+                      key={wId}
+                      variant="secondary"
+                      className="bg-zinc-800 border border-zinc-700 text-zinc-300 text-[10px] pl-2 pr-1 py-0.5 flex items-center gap-1"
+                    >
+                      <span>{profile?.full_name}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveWingman(wId)}
+                        className="text-zinc-500 hover:text-white rounded-full p-0.5"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
           {/* Due Date */}
           <div className="space-y-1.5">
             <Label className="text-zinc-300">Due Date</Label>
@@ -295,36 +370,55 @@ export function CreateTaskSheet({ profiles, trigger, defaultStatus }: CreateTask
               </SelectContent>
             </Select>
           </div>
-
-          {/* DECO */}
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-1.5">
-              <Label className="text-zinc-300">DECO (Duration & Complexity)</Label>
-              <span className="relative group inline-flex items-center cursor-pointer text-zinc-400 hover:text-white transition-colors">
-                <span className="text-[10px] bg-zinc-800 text-zinc-400 font-bold h-4 w-4 rounded-full flex items-center justify-center border border-zinc-700 hover:border-zinc-500">i</span>
-                <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 hidden group-hover:block bg-zinc-950 text-zinc-200 text-[10px] font-normal p-2 rounded-md shadow-lg border border-zinc-800 z-50 text-center leading-normal">
-                  DECO: Duration, Effort, COmplexity
+          {/* Duration & Complexity Decoupled */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-1.5">
+                <Label className="text-zinc-300 text-xs">Duration</Label>
+                <span className="relative group inline-flex items-center cursor-pointer text-zinc-400 hover:text-white transition-colors">
+                  <span className="text-[10px] bg-zinc-800 text-zinc-450 font-bold h-4 w-4 rounded-full flex items-center justify-center border border-zinc-700 hover:border-zinc-500">i</span>
+                  <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 hidden group-hover:block bg-zinc-950 text-zinc-200 text-[10px] font-normal p-2 rounded-md shadow-lg border border-zinc-800 z-50 text-center leading-normal">
+                    Duration: How long the task will take to complete.
+                  </span>
                 </span>
-              </span>
+              </div>
+              <Select value={deco} onValueChange={(v) => setDeco(v as DecoLevel)}>
+                <SelectTrigger className="bg-[#2D2D2D] border-zinc-700 text-white text-xs">
+                  <SelectValue placeholder="Duration" />
+                </SelectTrigger>
+                <SelectContent className="bg-[#2D2D2D] border-zinc-700 text-white">
+                  {Object.keys(DECO_CONFIG).map((dKey) => (
+                    <SelectItem key={dKey} value={dKey} className="text-xs">
+                      {DECO_CONFIG[dKey as DecoLevel].label} ({DECO_CONFIG[dKey as DecoLevel].duration})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-            <Select value={deco} onValueChange={(v) => setDeco(v as DecoLevel)}>
-              <SelectTrigger className="bg-[#2D2D2D] border-zinc-700 text-white">
-                <SelectValue placeholder="When will this be completed?" />
-              </SelectTrigger>
-              <SelectContent className="bg-[#2D2D2D] border-zinc-700 text-white">
-                {ALL_DECOS.map((d) => (
-                  <SelectItem key={d} value={d}>
-                    <span className="flex items-center gap-2">
-                      <span
-                        className="h-2.5 w-2.5 rounded-full"
-                        style={{ backgroundColor: DECO_CONFIG[d].color }}
-                      />
-                      {DECO_CONFIG[d].label} · {DECO_CONFIG[d].duration}
-                    </span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-1.5">
+                <Label className="text-zinc-300 text-xs">Complexity</Label>
+                <span className="relative group inline-flex items-center cursor-pointer text-zinc-400 hover:text-white transition-colors">
+                  <span className="text-[10px] bg-zinc-800 text-zinc-450 font-bold h-4 w-4 rounded-full flex items-center justify-center border border-zinc-700 hover:border-zinc-500">i</span>
+                  <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 hidden group-hover:block bg-zinc-950 text-zinc-200 text-[10px] font-normal p-2 rounded-md shadow-lg border border-zinc-800 z-50 text-center leading-normal">
+                    Complexity: The cognitive or technical difficulty.
+                  </span>
+                </span>
+              </div>
+              <Select value={complexity} onValueChange={(v) => setComplexity(v as ComplexityLevel)}>
+                <SelectTrigger className="bg-[#2D2D2D] border-zinc-700 text-white text-xs">
+                  <SelectValue placeholder="Complexity" />
+                </SelectTrigger>
+                <SelectContent className="bg-[#2D2D2D] border-zinc-700 text-white">
+                  {Object.keys(DECO_CONFIG).map((dKey) => (
+                    <SelectItem key={dKey} value={dKey} className="text-xs">
+                      {DECO_CONFIG[dKey as DecoLevel].label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {/* Labels (multi-select, max 2) */}

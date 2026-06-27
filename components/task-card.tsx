@@ -15,12 +15,19 @@ interface TaskCardProps {
 
 export function TaskCard({ task, onClick, draggable = true, onDragStart }: TaskCardProps) {
   const priority = PRIORITY_CONFIG[task.priority];
-  const deco = DECO_CONFIG[task.deco];
+  const duration = DECO_CONFIG[task.deco || "medium"];
+  const complexity = DECO_CONFIG[task.complexity || "medium"];
   const isCompleted = task.status === "tango_charlie";
 
   // PRD: "Dependency on:: User Name" — render for each dependency this task has
   const dependencyNames = task.dependencies?.map((d) => d.depends_on_user?.full_name).filter(Boolean);
-  const ownerNames = [task.owner?.full_name, task.owner2?.full_name].filter(Boolean).join(" & ");
+  
+  const allOwners = [
+    task.owner?.full_name,
+    task.owner2?.full_name,
+    ...(task.wingmen?.map((w) => w.full_name) || [])
+  ].filter(Boolean);
+  const ownerNames = allOwners.join(", ");
 
   return (
     <div
@@ -39,10 +46,10 @@ export function TaskCard({ task, onClick, draggable = true, onDragStart }: TaskC
         color: "#FFFFFF" 
       }}
     >
-      {/* Priority + Complexity oval badges */}
-      <div className="flex flex-wrap items-center gap-1.5 mb-2.5">
+      {/* Priority + Duration + Complexity badges */}
+      <div className="flex flex-wrap items-center gap-1.5 mb-2">
         <span
-          className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold border transition-all"
+          className="inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-semibold border transition-all"
           style={{
             borderColor: `${priority.color}40`,
             backgroundColor: `${priority.color}15`,
@@ -53,23 +60,44 @@ export function TaskCard({ task, onClick, draggable = true, onDragStart }: TaskC
           {task.priority}
         </span>
         <span
-          className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold border transition-all"
+          className="inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-semibold border transition-all"
           style={{
-            borderColor: `${deco.color}40`,
-            backgroundColor: `${deco.color}15`,
-            color: deco.color,
+            borderColor: `${duration.color}40`,
+            backgroundColor: `${duration.color}15`,
+            color: duration.color,
           }}
-          title={`Complexity: ${deco.label} (${deco.duration})`}
+          title={`Duration: ${duration.label} (${duration.duration})`}
         >
-          {deco.label}
+          ⏱️ {duration.label}
         </span>
-        {task.is_blocked && (
-          <span className="ml-auto flex items-center gap-1 text-[11px] font-medium text-red-400">
-            <AlertTriangle className="h-3 w-3" />
-            Dependency
-          </span>
-        )}
+        <span
+          className="inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-semibold border transition-all"
+          style={{
+            borderColor: `${complexity.color}40`,
+            backgroundColor: `${complexity.color}15`,
+            color: complexity.color,
+          }}
+          title={`Complexity: ${complexity.label}`}
+        >
+          🧠 {complexity.label}
+        </span>
       </div>
+
+      {/* External Dependency and Blocking visibility */}
+      {(task.is_blocked || task.parent_task_id) && (
+        <div className="flex flex-wrap gap-1 mb-2">
+          {task.is_blocked && (
+            <Badge className="bg-red-950/60 hover:bg-red-950/60 border border-red-500/40 text-red-400 text-[9px] font-bold px-1.5 py-0 rounded flex items-center gap-0.5">
+              ⚠️ Waiting on Dep
+            </Badge>
+          )}
+          {task.parent_task_id && (
+            <Badge className="bg-purple-950/60 hover:bg-purple-950/60 border border-purple-500/40 text-purple-400 text-[9px] font-bold px-1.5 py-0 rounded flex items-center gap-0.5">
+              🛑 Blocking Task
+            </Badge>
+          )}
+        </div>
+      )}
 
       {/* Name */}
       <h4 className="text-sm font-medium leading-snug mb-1">{task.name}</h4>
@@ -79,26 +107,16 @@ export function TaskCard({ task, onClick, draggable = true, onDragStart }: TaskC
         <p className="text-xs text-zinc-400 line-clamp-2 mb-2">{task.description}</p>
       )}
 
-      {/* Labels & Linked task */}
-      {(task.parent_task_id || task.labels?.length > 0) && (
+      {/* Labels */}
+      {task.labels?.length > 0 && (
         <div className="flex flex-wrap gap-1 mb-2">
-          {task.parent_task_id && (
-            <Badge className="text-[10px] px-1.5 py-0 bg-purple-600 hover:bg-purple-600 text-white font-bold">
-              ⬆ Linked task
-            </Badge>
-          )}
           {task.labels?.map((label) => (
             <Badge
               key={label}
               variant="outline"
-              className={cn(
-                "text-[10px] px-1.5 py-0",
-                label === "blocking_task" 
-                  ? "border-red-500 bg-red-500/10 text-red-450 font-bold"
-                  : "border-zinc-600 text-zinc-300"
-              )}
+              className="text-[9px] px-1.5 py-0 border-zinc-650 text-zinc-300"
             >
-              {LABEL_CONFIG[label].label}
+              {LABEL_CONFIG[label]?.label ?? label}
             </Badge>
           ))}
         </div>
@@ -106,7 +124,7 @@ export function TaskCard({ task, onClick, draggable = true, onDragStart }: TaskC
 
       {/* Blocked reason */}
       {task.is_blocked && task.blocked_reason && (
-        <p className="text-[11px] text-red-400 mb-2">Waiting for: {task.blocked_reason}</p>
+        <p className="text-[11px] text-red-400 mb-2 font-medium">Waiting for: {task.blocked_reason}</p>
       )}
 
       {/* Dependency Info */}
@@ -118,9 +136,6 @@ export function TaskCard({ task, onClick, draggable = true, onDragStart }: TaskC
               <span>Dependency on:: {dependencyNames.join(", ")}</span>
             </div>
           )}
-          <div className="text-[10px] text-zinc-400 font-semibold flex items-center gap-1">
-            <span>🔗 Waiting on {task.dependencies.length}</span>
-          </div>
         </div>
       )}
 

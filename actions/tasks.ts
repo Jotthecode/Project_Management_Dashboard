@@ -318,7 +318,7 @@ export async function setBlocked(taskId: string, isBlocked: boolean, reason?: st
 export async function getBoardTasks() {
   const supabase = await createClient();
 
-  const { data, error } = await supabase
+  const query = supabase
     .from("tasks")
     .select(
       `
@@ -334,11 +334,21 @@ export async function getBoardTasks() {
         profile:profiles(id, full_name, email, avatar_url)
       )
     `
-    )
+    );
+
+  let { data, error } = await query
     .eq("is_archived", false)
     .order("created_at", { ascending: true });
 
-  if (error) throw error;
+  if (error && error.code === "42703") {
+    console.warn("Falling back getBoardTasks fetch to ignore is_archived filter since column is missing:", error.message);
+    const { data: fallbackData, error: fallbackError } = await query
+      .order("created_at", { ascending: true });
+    if (fallbackError) throw fallbackError;
+    data = fallbackData;
+  } else if (error) {
+    throw error;
+  }
 
   // Fetch profiles to resolve wingmen in memory
   const { data: profiles } = await supabase
@@ -520,7 +530,7 @@ export async function getLeaderboardData() {
 export async function getDailyTasks() {
   const supabase = await createClient();
 
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from("tasks")
     .select(`
       *,
@@ -537,6 +547,48 @@ export async function getDailyTasks() {
   const { data: profiles } = await supabase
     .from("profiles")
     .select("id, full_name, email, avatar_url");
+
+  // Fallback if is_archived column is missing
+  if (error && error.code === "42703") {
+    console.warn("Falling back getDailyTasks fetch to ignore is_archived filter since column is missing:", error.message);
+    const { data: fallbackData, error: fallbackError } = await supabase
+      .from("tasks")
+      .select(`
+        *,
+        owner:profiles!tasks_owner_id_fkey(id, full_name, email, avatar_url),
+        owner2:profiles!tasks_owner2_id_fkey(id, full_name, email, avatar_url),
+        requested_by_user:profiles!tasks_requested_by_fkey(id, full_name, email, avatar_url),
+        daily_completions(id, completed_at, completed_by)
+      `)
+      .eq("status", "oscar_delta")
+      .order("created_at", { ascending: false });
+
+    if (fallbackError) {
+      console.warn("Error fetching daily tasks with completions in fallback. Running second fallback query. Error detail:", fallbackError.message);
+      const { data: secondFallback, error: secondError } = await supabase
+        .from("tasks")
+        .select(`
+          *,
+          owner:profiles!tasks_owner_id_fkey(id, full_name, email, avatar_url),
+          owner2:profiles!tasks_owner2_id_fkey(id, full_name, email, avatar_url)
+        `)
+        .eq("status", "oscar_delta")
+        .order("created_at", { ascending: false });
+
+      if (secondError) throw secondError;
+      data = secondFallback ?? [];
+    } else {
+      data = fallbackData;
+    }
+
+    return (data ?? []).map((t: any) => ({
+      ...t,
+      daily_completions: t.daily_completions || [],
+      wingmen: (t.wingmen_ids || [])
+        .map((id: string) => profiles?.find((p) => p.id === id))
+        .filter(Boolean),
+    })) as any[];
+  }
 
   if (error) {
     console.error("Error fetching daily tasks with completions. Running fallback query. Error detail:", error.message);

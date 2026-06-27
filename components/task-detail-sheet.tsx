@@ -518,6 +518,9 @@ export function TaskDetailSheet({
                     })}
                   />
                 </div>
+                {task.requested_by_user?.full_name && (
+                  <Field label="Requested By" value={task.requested_by_user.full_name} />
+                )}
                 <Field
                   label="Wingmen"
                   value={task.wingmen?.map((w) => w.full_name).join(", ") || "None"}

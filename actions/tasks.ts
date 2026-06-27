@@ -18,6 +18,20 @@ import { sendEmail } from "@/lib/email";
 // CREATE TASK
 // =====================================================================
 
+const TASK_RELATIONS_SELECT = `
+  *,
+  owner:profiles!tasks_owner_id_fkey(id, full_name, email, avatar_url),
+  owner2:profiles!tasks_owner2_id_fkey(id, full_name, email, avatar_url),
+  requested_by_user:profiles!tasks_requested_by_fkey(id, full_name, email, avatar_url),
+  dependencies:task_dependencies!task_dependencies_task_id_fkey(
+    id, reason, linked_task_id,
+    depends_on_user:profiles!task_dependencies_depends_on_user_id_fkey(id, full_name)
+  ),
+  contributors:task_contributors(
+    profile:profiles(id, full_name, email, avatar_url)
+  )
+`;
+
 export interface CreateTaskInput {
   name: string;
   description: string;
@@ -54,7 +68,7 @@ export async function createTask(input: CreateTaskInput) {
   let { data: task, error } = await supabase
     .from("tasks")
     .insert(insertData)
-    .select()
+    .select(TASK_RELATIONS_SELECT)
     .single();
 
   if (error && (error.code === "PGRST204" || error.message.includes("complexity") || error.message.includes("wingmen_ids"))) {
@@ -65,7 +79,7 @@ export async function createTask(input: CreateTaskInput) {
     const { data: retryData, error: retryError } = await supabase
       .from("tasks")
       .insert(insertData)
-      .select()
+      .select(TASK_RELATIONS_SELECT)
       .single();
 
     if (retryError) {
@@ -75,7 +89,7 @@ export async function createTask(input: CreateTaskInput) {
         const { data: finalData, error: finalError } = await supabase
           .from("tasks")
           .insert(insertData)
-          .select()
+          .select(TASK_RELATIONS_SELECT)
           .single();
         if (finalError) throw finalError;
         task = finalData;
@@ -165,7 +179,7 @@ export async function createDependency(
   let { data: linkedTask, error: linkedErr } = await supabase
     .from("tasks")
     .insert(insertData)
-    .select()
+    .select(TASK_RELATIONS_SELECT)
     .single();
 
   if (linkedErr && (linkedErr.code === "PGRST204" || linkedErr.message.includes("complexity") || linkedErr.message.includes("wingmen_ids"))) {
@@ -176,7 +190,7 @@ export async function createDependency(
     const { data: retryData, error: retryError } = await supabase
       .from("tasks")
       .insert(insertData)
-      .select()
+      .select(TASK_RELATIONS_SELECT)
       .single();
 
     if (retryError) {
@@ -186,7 +200,7 @@ export async function createDependency(
         const { data: finalData, error: finalError } = await supabase
           .from("tasks")
           .insert(insertData)
-          .select()
+          .select(TASK_RELATIONS_SELECT)
           .single();
         if (finalError) throw finalError;
         linkedTask = finalData;
@@ -354,7 +368,7 @@ export async function moveTask(taskId: string, newStatus: TaskStatus) {
     .from("tasks")
     .update(update)
     .eq("id", taskId)
-    .select()
+    .select(TASK_RELATIONS_SELECT)
     .single();
 
   if (error && (error.code === "PGRST204" || error.code === "42703" || error.message.includes("score") || error.message.includes("completed_at"))) {
@@ -365,7 +379,7 @@ export async function moveTask(taskId: string, newStatus: TaskStatus) {
       .from("tasks")
       .update(update)
       .eq("id", taskId)
-      .select()
+      .select(TASK_RELATIONS_SELECT)
       .single();
     if (retryError) throw retryError;
     updated = retryData;
@@ -391,7 +405,7 @@ export async function setBlocked(taskId: string, isBlocked: boolean, reason?: st
       blocked_reason: isBlocked ? reason ?? null : null,
     })
     .eq("id", taskId)
-    .select()
+    .select(TASK_RELATIONS_SELECT)
     .single();
 
   if (error) throw error;
@@ -408,21 +422,7 @@ export async function getBoardTasks() {
 
   const query = supabase
     .from("tasks")
-    .select(
-      `
-      *,
-      owner:profiles!tasks_owner_id_fkey(id, full_name, email, avatar_url),
-      owner2:profiles!tasks_owner2_id_fkey(id, full_name, email, avatar_url),
-      requested_by_user:profiles!tasks_requested_by_fkey(id, full_name, email, avatar_url),
-      dependencies:task_dependencies!task_dependencies_task_id_fkey(
-        id, reason, linked_task_id,
-        depends_on_user:profiles!task_dependencies_depends_on_user_id_fkey(id, full_name)
-      ),
-      contributors:task_contributors(
-        profile:profiles(id, full_name, email, avatar_url)
-      )
-    `
-    );
+    .select(TASK_RELATIONS_SELECT);
 
   let { data, error } = await query
     .eq("is_archived", false)
@@ -995,7 +995,7 @@ export async function archiveTask(taskId: string, isArchived: boolean = true) {
     .from("tasks")
     .update({ is_archived: isArchived })
     .eq("id", taskId)
-    .select()
+    .select(TASK_RELATIONS_SELECT)
     .single();
 
   if (error) throw error;

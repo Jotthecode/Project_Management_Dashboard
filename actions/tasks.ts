@@ -37,25 +37,57 @@ export interface CreateTaskInput {
 export async function createTask(input: CreateTaskInput) {
   const supabase = await createClient();
 
-  const { data: task, error } = await supabase
+  const insertData: any = {
+    name: input.name,
+    description: input.description,
+    owner_id: input.ownerId,
+    owner2_id: input.owner2Id || null,
+    wingmen_ids: input.wingmenIds || [],
+    due_date: input.dueDate,
+    priority: input.priority,
+    deco: input.deco,
+    complexity: input.complexity || "medium",
+    labels: input.labels || [],
+    status: input.status ?? "sierra_bravo",
+  };
+
+  let { data: task, error } = await supabase
     .from("tasks")
-    .insert({
-      name: input.name,
-      description: input.description,
-      owner_id: input.ownerId,
-      owner2_id: input.owner2Id || null,
-      wingmen_ids: input.wingmenIds || [],
-      due_date: input.dueDate,
-      priority: input.priority,
-      deco: input.deco,
-      complexity: input.complexity || "medium",
-      labels: input.labels || [],
-      status: input.status ?? "sierra_bravo",
-    })
+    .insert(insertData)
     .select()
     .single();
 
-  if (error) throw error;
+  if (error && (error.code === "PGRST204" || error.message.includes("complexity") || error.message.includes("wingmen_ids"))) {
+    console.warn("Retrying createTask insert without complexity and wingmen_ids columns:", error.message);
+    delete insertData.complexity;
+    delete insertData.wingmen_ids;
+
+    const { data: retryData, error: retryError } = await supabase
+      .from("tasks")
+      .insert(insertData)
+      .select()
+      .single();
+
+    if (retryError) {
+      if (retryError.code === "PGRST204" || retryError.message.includes("owner2_id")) {
+        console.warn("Retrying createTask insert without owner2_id column:", retryError.message);
+        delete insertData.owner2_id;
+        const { data: finalData, error: finalError } = await supabase
+          .from("tasks")
+          .insert(insertData)
+          .select()
+          .single();
+        if (finalError) throw finalError;
+        task = finalData;
+      } else {
+        throw retryError;
+      }
+    } else {
+      task = retryData;
+    }
+  } else if (error) {
+    throw error;
+  }
 
   // Contributors
   if (input.contributorIds?.length) {
@@ -759,20 +791,22 @@ export interface UpdateTaskInput {
 export async function updateTask(input: UpdateTaskInput) {
   const supabase = await createClient();
 
-  const { data: updated, error } = await supabase
+  const updateData: any = {
+    name: input.name,
+    description: input.description,
+    owner_id: input.ownerId,
+    owner2_id: input.owner2Id || null,
+    wingmen_ids: input.wingmenIds || [],
+    due_date: input.dueDate,
+    priority: input.priority,
+    deco: input.deco,
+    complexity: input.complexity,
+    labels: input.labels,
+  };
+
+  let { data: updated, error } = await supabase
     .from("tasks")
-    .update({
-      name: input.name,
-      description: input.description,
-      owner_id: input.ownerId,
-      owner2_id: input.owner2Id || null,
-      wingmen_ids: input.wingmenIds || [],
-      due_date: input.dueDate,
-      priority: input.priority,
-      deco: input.deco,
-      complexity: input.complexity,
-      labels: input.labels,
-    })
+    .update(updateData)
     .eq("id", input.id)
     .select(`
       *,
@@ -788,7 +822,60 @@ export async function updateTask(input: UpdateTaskInput) {
     `)
     .single();
 
-  if (error) throw error;
+  if (error && (error.code === "PGRST204" || error.message.includes("complexity") || error.message.includes("wingmen_ids"))) {
+    console.warn("Retrying updateTask update without complexity and wingmen_ids columns:", error.message);
+    delete updateData.complexity;
+    delete updateData.wingmen_ids;
+
+    const { data: retryData, error: retryError } = await supabase
+      .from("tasks")
+      .update(updateData)
+      .eq("id", input.id)
+      .select(`
+        *,
+        owner:profiles!tasks_owner_id_fkey(id, full_name),
+        owner2:profiles!tasks_owner2_id_fkey(id, full_name),
+        requested_by_user:profiles!tasks_requested_by_fkey(id, full_name),
+        dependencies:task_dependencies(
+          id,
+          reason,
+          depends_on_user:profiles!task_dependencies_depends_on_user_id_fkey(id, full_name),
+          linked_task_id
+        )
+      `)
+      .single();
+
+    if (retryError) {
+      if (retryError.code === "PGRST204" || retryError.message.includes("owner2_id")) {
+        console.warn("Retrying updateTask update without owner2_id column:", retryError.message);
+        delete updateData.owner2_id;
+        const { data: finalData, error: finalError } = await supabase
+          .from("tasks")
+          .update(updateData)
+          .eq("id", input.id)
+          .select(`
+            *,
+            owner:profiles!tasks_owner_id_fkey(id, full_name),
+            requested_by_user:profiles!tasks_requested_by_fkey(id, full_name),
+            dependencies:task_dependencies(
+              id,
+              reason,
+              depends_on_user:profiles!task_dependencies_depends_on_user_id_fkey(id, full_name),
+              linked_task_id
+            )
+          `)
+          .single();
+        if (finalError) throw finalError;
+        updated = finalData;
+      } else {
+        throw retryError;
+      }
+    } else {
+      updated = retryData;
+    }
+  } else if (error) {
+    throw error;
+  }
 
   // Resolve wingmen profiles in memory
   const { data: profiles } = await supabase

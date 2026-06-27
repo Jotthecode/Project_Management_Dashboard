@@ -36,7 +36,7 @@ export function TaskCard({ task, onClick, draggable = true, onDragStart }: TaskC
       className={cn(
         "rounded-lg p-3 cursor-pointer border transition-colors",
         isCompleted 
-          ? "border-emerald-250 dark:border-emerald-800/40 hover:border-emerald-450 dark:hover:border-emerald-500/60 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-900 dark:text-emerald-100" 
+          ? "border-emerald-300 dark:border-emerald-800/80 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-900 dark:text-emerald-100 hover:border-emerald-450 dark:hover:border-emerald-700/80" 
           : "border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 hover:border-zinc-300 dark:hover:border-zinc-700",
         task.is_blocked && "ring-1 ring-red-500/60"
       )}
@@ -95,11 +95,21 @@ export function TaskCard({ task, onClick, draggable = true, onDragStart }: TaskC
       )}
 
       {/* Name */}
-      <h4 className="text-sm font-medium leading-snug mb-1">{task.name}</h4>
+      <h4 className={cn(
+        "text-sm font-medium leading-snug mb-1",
+        isCompleted && "text-emerald-950 dark:text-emerald-50 line-through decoration-emerald-500/30"
+      )}>
+        {task.name}
+      </h4>
 
       {/* Description preview */}
       {task.description && (
-        <p className="text-xs text-zinc-400 line-clamp-2 mb-2">{task.description}</p>
+        <p className={cn(
+          "text-xs line-clamp-2 mb-2",
+          isCompleted ? "text-emerald-800/90 dark:text-emerald-400" : "text-zinc-400"
+        )}>
+          {task.description}
+        </p>
       )}
 
       {/* Labels */}

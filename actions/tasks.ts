@@ -856,18 +856,7 @@ export async function updateTask(input: UpdateTaskInput) {
     .from("tasks")
     .update(updateData)
     .eq("id", input.id)
-    .select(`
-      *,
-      owner:profiles!tasks_owner_id_fkey(id, full_name),
-      owner2:profiles!tasks_owner2_id_fkey(id, full_name),
-      requested_by_user:profiles!tasks_requested_by_fkey(id, full_name),
-      dependencies:task_dependencies(
-        id,
-        reason,
-        depends_on_user:profiles!task_dependencies_depends_on_user_id_fkey(id, full_name),
-        linked_task_id
-      )
-    `)
+    .select(TASK_RELATIONS_SELECT)
     .single();
 
   if (error && (error.code === "PGRST204" || error.message.includes("complexity") || error.message.includes("wingmen_ids"))) {
@@ -879,18 +868,7 @@ export async function updateTask(input: UpdateTaskInput) {
       .from("tasks")
       .update(updateData)
       .eq("id", input.id)
-      .select(`
-        *,
-        owner:profiles!tasks_owner_id_fkey(id, full_name),
-        owner2:profiles!tasks_owner2_id_fkey(id, full_name),
-        requested_by_user:profiles!tasks_requested_by_fkey(id, full_name),
-        dependencies:task_dependencies(
-          id,
-          reason,
-          depends_on_user:profiles!task_dependencies_depends_on_user_id_fkey(id, full_name),
-          linked_task_id
-        )
-      `)
+      .select(TASK_RELATIONS_SELECT)
       .single();
 
     if (retryError) {
@@ -903,13 +881,14 @@ export async function updateTask(input: UpdateTaskInput) {
           .eq("id", input.id)
           .select(`
             *,
-            owner:profiles!tasks_owner_id_fkey(id, full_name),
-            requested_by_user:profiles!tasks_requested_by_fkey(id, full_name),
-            dependencies:task_dependencies(
-              id,
-              reason,
-              depends_on_user:profiles!task_dependencies_depends_on_user_id_fkey(id, full_name),
-              linked_task_id
+            owner:profiles!tasks_owner_id_fkey(id, full_name, email, avatar_url),
+            requested_by_user:profiles!tasks_requested_by_fkey(id, full_name, email, avatar_url),
+            dependencies:task_dependencies!task_dependencies_task_id_fkey(
+              id, reason, linked_task_id,
+              depends_on_user:profiles!task_dependencies_depends_on_user_id_fkey(id, full_name)
+            ),
+            contributors:task_contributors(
+              profile:profiles(id, full_name, email, avatar_url)
             )
           `)
           .single();

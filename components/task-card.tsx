@@ -165,7 +165,7 @@ export function TaskCard({ task, onClick, draggable = true, onDragStart }: TaskC
         <span className="truncate max-w-[65%]" title={ownerNames}>
           {ownerNames || "Unassigned"}
         </span>
-        <span>{new Date(task.due_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
+        <span>{task.due_date ? new Date(task.due_date).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" }) : "No due date"}</span>
       </div>
     </div>
   );

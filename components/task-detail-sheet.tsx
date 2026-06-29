@@ -95,7 +95,7 @@ export function TaskDetailSheet({
       setEditOwnerId(task.owner_id);
       setEditWingmenIds(task.wingmen_ids || []);
       setSelectedWingmanToAdd("");
-      setEditDueDate(task.due_date ? new Date(task.due_date).toISOString().split("T")[0] : "");
+      setEditDueDate(task.due_date ? task.due_date.split("T")[0] : "");
       setEditPriority(task.priority);
       setEditDeco(task.deco);
       setEditComplexity(task.complexity || "medium");
@@ -511,11 +511,12 @@ export function TaskDetailSheet({
                   <Field label="Task Owner" value={task.owner?.full_name ?? "Unassigned"} />
                   <Field
                     label="Due Date"
-                    value={new Date(task.due_date).toLocaleDateString("en-US", {
+                    value={task.due_date ? new Date(task.due_date).toLocaleDateString("en-US", {
                       month: "short",
                       day: "numeric",
                       year: "numeric",
-                    })}
+                      timeZone: "UTC",
+                    }) : "No due date"}
                   />
                 </div>
                 {task.requested_by_user?.full_name && (
@@ -688,7 +689,7 @@ export function TaskDetailSheet({
                   <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 hidden group-hover:block bg-zinc-950 text-zinc-200 text-[10px] font-normal p-3 rounded-md shadow-lg border border-zinc-800/80 z-50 text-left leading-normal space-y-1.5">
                     <p className="font-bold text-yellow-400 border-b border-zinc-800/80 pb-1 mb-1">Scoring Breakdown</p>
                     <p className="font-mono text-zinc-400 bg-zinc-900/60 p-1.5 rounded text-[9px] mb-1.5 text-center">
-                      Priority × DECO × 100 × Bonus
+                      Priority × DECO × Complexity × 100 × Bonus
                     </p>
                     <div className="flex justify-between text-zinc-450">
                       <span>Priority Weight ({task.priority}):</span>
@@ -697,6 +698,10 @@ export function TaskDetailSheet({
                     <div className="flex justify-between text-zinc-450">
                       <span>DECO Weight ({deco.label}):</span>
                       <span className="font-semibold text-zinc-300">{deco.weight}</span>
+                    </div>
+                    <div className="flex justify-between text-zinc-450">
+                      <span>Complexity Weight ({complexity.label}):</span>
+                      <span className="font-semibold text-zinc-300">{complexity.weight}</span>
                     </div>
                     <div className="flex justify-between text-zinc-450">
                       <span>Days Early:</span>
